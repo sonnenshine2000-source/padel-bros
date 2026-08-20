@@ -29,7 +29,6 @@ color:var(--ink)
 }
 
 button{font:inherit}
-
 .hidden{display:none!important}
 
 .top{
@@ -103,9 +102,7 @@ box-shadow:var(--shadow);
 margin-bottom:16px
 }
 
-.hero small{
-color:#b9c9bf
-}
+.hero small{color:#b9c9bf}
 
 .hero h1{
 font-size:31px;
@@ -208,9 +205,7 @@ padding:13px 0;
 border-bottom:1px solid var(--line)
 }
 
-.pollrow:last-child{
-border-bottom:0
-}
+.pollrow:last-child{border-bottom:0}
 
 .pollhead{
 display:flex;
@@ -241,9 +236,7 @@ padding:5px 9px;
 font-size:12px
 }
 
-.star{
-color:#f59e0b
-}
+.star{color:#f59e0b}
 
 .courts{
 display:grid;
@@ -312,9 +305,7 @@ gap:10px;
 align-items:center
 }
 
-.pay small{
-color:var(--muted)
-}
+.pay small{color:var(--muted)}
 
 .pay a{
 color:#2563eb;
@@ -322,17 +313,22 @@ font-weight:700;
 text-decoration:none
 }
 
-.open{
-color:#b45309
-}
-
-.paid{
-color:#15803d
-}
+.open{color:#b45309}
+.paid{color:#15803d}
 
 .admin{
 border:2px solid #c7d2fe;
 background:#f8faff
+}
+
+.smallAdmin{
+border:0;
+background:#eef2ff;
+color:#3730a3;
+border-radius:9px;
+padding:8px 10px;
+font-weight:800;
+cursor:pointer
 }
 
 .admin button,
@@ -374,15 +370,48 @@ place-items:center;
 font-size:34px
 }
 
+.pinlogin{
+text-align:left;
+margin-top:18px
+}
+
+.pinlogin label{
+display:block;
+font-size:13px;
+font-weight:800;
+margin:12px 0 6px
+}
+
+.logininput{
+width:100%;
+padding:13px 14px;
+border:1px solid var(--line);
+background:white;
+border-radius:12px;
+font:inherit;
+outline:none
+}
+
+.logininput:focus{
+border-color:var(--green2);
+box-shadow:0 0 0 3px #35d07f22
+}
+
 .google{
 width:100%;
 padding:14px;
-border:1px solid var(--line);
-background:white;
+border:0;
+background:var(--dark);
+color:white;
 border-radius:12px;
 font-weight:800;
 cursor:pointer;
 margin-top:18px
+}
+
+.google:disabled{
+opacity:.55;
+cursor:not-allowed
 }
 
 .denied{
@@ -394,27 +423,11 @@ margin-top:14px
 }
 
 @media(max-width:760px){
-
-.grid{
-grid-template-columns:1fr
-}
-
-.courts{
-grid-template-columns:1fr
-}
-
-.pollgrid{
-grid-template-columns:1fr
-}
-
-.topin{
-padding:12px 14px
-}
-
-.userpill{
-display:none
-}
-
+.grid{grid-template-columns:1fr}
+.courts{grid-template-columns:1fr}
+.pollgrid{grid-template-columns:1fr}
+.topin{padding:12px 14px}
+.userpill{display:none}
 }
 </style>
 </head>
@@ -422,7 +435,6 @@ display:none
 <body>
 
 <div id="loginView" class="login">
-
 <div class="loginbox">
 
 <div class="loginlogo">🎾</div>
@@ -433,14 +445,35 @@ display:none
 Deine private Padel-Gruppe
 </p>
 
-<button id="google" class="google">
-🔵 Mit Google anmelden
+<div class="pinlogin">
+
+<label for="playerSelect">Spieler</label>
+
+<select id="playerSelect" class="logininput">
+<option value="">Spieler auswählen …</option>
+</select>
+
+<label for="pinInput">6-stellige PIN</label>
+
+<input
+id="pinInput"
+class="logininput"
+type="password"
+inputmode="numeric"
+maxlength="6"
+pattern="[0-9]{6}"
+placeholder="••••••"
+>
+
+<button id="pinLogin" class="google">
+🔐 Anmelden
 </button>
+
+</div>
 
 <div id="loginStatus"></div>
 
 </div>
-
 </div>
 
 
@@ -475,7 +508,6 @@ Abmelden
 
 <main>
 
-
 <section class="hero">
 
 <small>NÄCHSTER SPIELTAG</small>
@@ -495,7 +527,6 @@ Court 1 · 19:00 Uhr
 
 <div class="grid">
 
-
 <section class="card">
 
 <h2>📊 Wer ist dabei?</h2>
@@ -504,62 +535,33 @@ Court 1 · 19:00 Uhr
 Offen bis Dienstag 17:00 Uhr.
 </div>
 
-
 <div class="pollgrid">
 
 <button class="vote" data-response="18:30">
-
 🟢
-
 <b>18:30 Uhr</b>
-
-<span>
-Court 5
-</span>
-
+<span>Court 5</span>
 </button>
-
 
 <button class="vote" data-response="19:00">
-
 🔵
-
 <b>19:00 Uhr</b>
-
-<span>
-Court 1
-</span>
-
+<span>Court 1</span>
 </button>
-
 
 <button class="vote" data-response="egal">
-
 🟣
-
 <b>Egal wann</b>
-
-<span>
-Ich bin flexibel
-</span>
-
+<span>Ich bin flexibel</span>
 </button>
 
-
 <button class="vote" data-response="nein">
-
 🔴
-
 <b>Kann nicht</b>
-
-<span>
-Diesmal nicht dabei
-</span>
-
+<span>Diesmal nicht dabei</span>
 </button>
 
 </div>
-
 
 <div id="pollStatus"></div>
 
@@ -571,9 +573,7 @@ Diesmal nicht dabei
 <h2>👥 Abstimmung</h2>
 
 <div class="sub">
-
 Wer abgestimmt hat, wird hier angezeigt.
-
 </div>
 
 <div id="pollSummary"></div>
@@ -581,7 +581,6 @@ Wer abgestimmt hat, wird hier angezeigt.
 </section>
 
 </div>
-
 
 
 <section class="card" style="margin-top:16px">
@@ -592,9 +591,7 @@ Wer abgestimmt hat, wird hier angezeigt.
 Die aktuelle Zuordnung für den Spieltag.
 </div>
 
-
 <div class="courts">
-
 
 <div class="court court5">
 
@@ -625,14 +622,11 @@ Noch keine Zuordnung.
 
 </div>
 
-
 </div>
-
 
 <div id="scheduleStatus"></div>
 
 </section>
-
 
 
 <section
@@ -648,19 +642,31 @@ Spieltag verwalten.
 </div>
 
 <button id="generate" class="primary">
-
 Spielplan jetzt erzeugen
-
 </button>
 
 <div id="adminStatus"></div>
 
+<hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+
+<h3 style="margin:0 0 5px">
+👥 Spielerverwaltung
+</h3>
+
+<div class="sub">
+Spieler freigeben, sperren und 6-stellige PINs setzen.
+</div>
+
+<div id="playerAdminList" class="list">
+<div class="sub">
+Spieler werden geladen …
+</div>
+</div>
+
 </section>
 
 
-
 <section class="grid" style="margin-top:16px">
-
 
 <section class="card">
 
@@ -695,13 +701,11 @@ Noch keine Matches.
 
 </section>
 
-
 </section>
 
 </main>
 
 </div>
-
 
 
 <script type="module">
@@ -734,9 +738,7 @@ SUPABASE_KEY
 
 
 let currentUser=null;
-
 let currentPlayer=null;
-
 let matchDay=null;
 
 
@@ -800,7 +802,6 @@ return {
 function nextTuesday(){
 
 const d=new Date();
-
 const day=d.getDay();
 
 let add=
@@ -919,23 +920,18 @@ data:{
 session
 }
 }=
-await supabase
-.auth
-.getSession();
+await supabase.auth.getSession();
 
-
-currentUser=
-session?.user||null;
-
+currentUser=session?.user||null;
 
 if(!currentUser){
 
 showLogin();
+await loadLoginPlayers();
 
 return;
 
 }
-
 
 const {
 data:player,
@@ -944,48 +940,26 @@ error
 await supabase
 .from('players')
 .select(
-'id,name,is_admin,is_stammspieler,paypal_email,auth_user_id'
+'id,name,is_admin,is_stammspieler,paypal_email,auth_user_id,active,login_email'
 )
-.eq(
-'auth_user_id',
-currentUser.id
-)
+.eq('auth_user_id',currentUser.id)
 .maybeSingle();
 
+if(error || !player || player.active===false){
 
-if(error){
+await supabase.auth.signOut();
 
 showLogin(
-'Anmeldung konnte nicht geprüft werden.'
+'Dein Zugang ist nicht freigeschaltet.'
 );
+
+await loadLoginPlayers();
 
 return;
 
 }
-
-
-/*
-Nur Spieler, die in der players-Tabelle
-freigeschaltet sind, bekommen Zugang.
-*/
-
-if(!player){
-
-await supabase
-.auth
-.signOut();
-
-showLogin(
-'Dein Google-Konto ist noch nicht für Padel Bros freigeschaltet.'
-);
-
-return;
-
-}
-
 
 currentPlayer=player;
-
 
 $('who').textContent=
 player.name+
@@ -995,7 +969,6 @@ player.is_admin
 :''
 );
 
-
 $('adminCard')
 .classList
 .toggle(
@@ -1003,18 +976,17 @@ $('adminCard')
 !player.is_admin
 );
 
-
 $('loginView')
-.classList
-.add('hidden');
-
+.classList.add('hidden');
 
 $('appView')
-.classList
-.remove('hidden');
-
+.classList.remove('hidden');
 
 await loadAll();
+
+if(player.is_admin){
+await loadPlayerAdmin();
+}
 
 }
 
@@ -1031,7 +1003,6 @@ $('loginView')
 .classList
 .remove('hidden');
 
-
 $('loginStatus')
 .innerHTML=
 text
@@ -1045,11 +1016,39 @@ escapeHtml(text)+
 }
 
 
+async function loadLoginPlayers(){
+
+const q=
+await supabase
+.from('players')
+.select('id,name,active')
+.eq('active',true)
+.order('name');
+
+if(q.error){
+
+$('playerSelect').innerHTML=
+'<option value="">Spielerliste konnte nicht geladen werden</option>';
+
+return;
+
+}
+
+$('playerSelect').innerHTML=
+'<option value="">Spieler auswählen …</option>'+
+(q.data||[])
+.map(p=>
+`<option value="${p.id}">${escapeHtml(p.name)}</option>`
+)
+.join('');
+
+}
+
+
 async function loadAll(){
 
 const date=
 nextTuesday();
-
 
 const {
 data,
@@ -1065,7 +1064,6 @@ await supabase
 date
 )
 .maybeSingle();
-
 
 if(error){
 
@@ -1096,13 +1094,11 @@ return;
 
 matchDay=data;
 
-
 $('heroDate')
 .textContent=
 niceDate(
 data.match_date
 );
-
 
 await Promise.all([
 loadPoll(),
@@ -1119,9 +1115,7 @@ async function loadPoll(){
 if(!matchDay)
 return;
 
-
 updatePollUI();
-
 
 const own=
 await supabase
@@ -1137,7 +1131,6 @@ currentPlayer.id
 )
 .maybeSingle();
 
-
 document
 .querySelectorAll('.vote')
 .forEach(
@@ -1148,7 +1141,6 @@ b.dataset.response===
 own.data?.response
 )
 );
-
 
 if(own.data?.response){
 
@@ -1187,7 +1179,6 @@ await supabase
 'match_day_id',
 matchDay.id
 );
-
 
 if(q.error){
 
@@ -1239,7 +1230,6 @@ ${arr.length}
 </span>
 
 </div>
-
 
 <div class="names">
 
@@ -1314,7 +1304,6 @@ $('pollStatus'),
 
 }
 
-
 const existing=
 await supabase
 .from('poll_responses')
@@ -1329,7 +1318,6 @@ currentPlayer.id
 )
 .maybeSingle();
 
-
 const payload={
 response:
 btn.dataset.response,
@@ -1338,7 +1326,6 @@ updated_at:
 new Date()
 .toISOString()
 };
-
 
 const result=
 
@@ -1410,7 +1397,6 @@ matchDay.id
 )
 .order('court')
 .order('position');
-
 
 if(q.error){
 
@@ -1494,7 +1480,6 @@ x=>x.court==='court5'
 'court5'
 );
 
-
 render(
 (q.data||[])
 .filter(
@@ -1513,23 +1498,18 @@ async()=>{
 if(!currentPlayer?.is_admin)
 return;
 
-
 msg(
 $('adminStatus'),
 'Spielplan wird erzeugt …',
 true
 );
 
-
 const {
 data:{
 session
 }
 }=
-await supabase
-.auth
-.getSession();
-
+await supabase.auth.getSession();
 
 const res=
 await fetch(
@@ -1555,7 +1535,6 @@ matchDay.id
 }
 );
 
-
 let body={};
 
 try{
@@ -1564,7 +1543,6 @@ body=
 await res.json();
 
 }catch{}
-
 
 if(!res.ok){
 
@@ -1603,7 +1581,6 @@ await supabase
 matchDay.id
 )
 .order('court');
-
 
 if(q.error){
 
@@ -1704,7 +1681,6 @@ await supabase
 matchDay.id
 );
 
-
 if(
 q.error||
 !q.data?.length
@@ -1768,7 +1744,6 @@ p.players_main?.paypal_email||
 
 </div>
 
-
 <span class="${
 p.paid
 ?'paid'
@@ -1796,40 +1771,412 @@ p.paid
 }
 
 
-$('google')
-.onclick=
-async()=>{
+$('pinLogin').onclick=async()=>{
 
-const {
-error
-}=
-await supabase
-.auth
-.signInWithOAuth({
+const playerId=
+$('playerSelect').value;
 
-provider:'google',
+const pin=
+$('pinInput').value.trim();
 
-options:{
-redirectTo:
-location.origin
+if(!playerId){
+
+return msg(
+$('loginStatus'),
+'Bitte zuerst deinen Namen auswählen.'
+);
+
 }
 
+if(!/^\d{6}$/.test(pin)){
+
+return msg(
+$('loginStatus'),
+'Bitte eine 6-stellige PIN eingeben.'
+);
+
+}
+
+$('pinLogin').disabled=true;
+$('pinLogin').textContent='🔄 Anmeldung …';
+
+try{
+
+const res=
+await fetch(
+SUPABASE_URL+
+'/functions/v1/player-auth',
+{
+method:'POST',
+headers:{
+'Content-Type':'application/json'
+},
+body:JSON.stringify({
+action:'login',
+name:
+$('playerSelect')
+.options[
+$('playerSelect').selectedIndex
+].text,
+pin
+})
+}
+);
+
+const body=await res.json();
+
+if(!res.ok){
+
+msg(
+$('loginStatus'),
+body.error||
+'Anmeldung fehlgeschlagen.'
+);
+
+return;
+
+}
+
+if(body.session){
+
+await supabase.auth.setSession({
+access_token:
+body.session.access_token,
+refresh_token:
+body.session.refresh_token
 });
 
+}
 
-if(error){
+$('pinInput').value='';
 
-$('loginStatus')
-.innerHTML=
-'<div class="denied">'+
-escapeHtml(
-error.message
-)+
-'</div>';
+await load();
+
+}
+catch(e){
+
+msg(
+$('loginStatus'),
+'Anmeldung fehlgeschlagen.'
+);
+
+}
+finally{
+
+$('pinLogin').disabled=false;
+$('pinLogin').textContent='🔐 Anmelden';
 
 }
 
 };
+
+
+$('pinInput').addEventListener(
+'keydown',
+e=>{
+if(e.key==='Enter')
+$('pinLogin').click();
+}
+);
+
+
+async function loadPlayerAdmin(){
+
+if(!currentPlayer?.is_admin)
+return;
+
+const q=
+await supabase
+.from('players')
+.select(
+'id,name,is_admin,is_stammspieler,paypal_email,active,auth_user_id,login_email'
+)
+.order('name');
+
+if(q.error){
+
+$('playerAdminList').innerHTML=
+'<div class="status err">'+
+escapeHtml(q.error.message)+
+'</div>';
+
+return;
+
+}
+
+$('playerAdminList').innerHTML=
+(q.data||[])
+.map(p=>`
+
+<div class="item">
+
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+
+<div>
+
+<b>${escapeHtml(p.name)}</b>
+
+${p.is_admin?' 👑':''}
+
+${p.is_stammspieler?
+' <span class="star">⭐</span>':
+''}
+
+<div class="sub" style="margin:4px 0 0">
+
+${p.active===false?
+'🔒 Gesperrt':
+'🟢 Aktiv'}
+
+·
+
+${p.auth_user_id?
+'PIN eingerichtet':
+'Noch keine PIN'}
+
+</div>
+
+</div>
+
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+
+<button
+class="smallAdmin"
+data-action="pin"
+data-id="${p.id}">
+🔑 PIN
+</button>
+
+<button
+class="smallAdmin"
+data-action="active"
+data-id="${p.id}">
+${p.active===false?
+'Freigeben':
+'Sperren'}
+</button>
+
+<button
+class="smallAdmin"
+data-action="stamm"
+data-id="${p.id}">
+${p.is_stammspieler?
+'⭐ Stamm':
+'☆ Ersatz'}
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+`)
+.join('')
+||
+'<div class="sub">Noch keine Spieler.</div>';
+
+}
+
+
+document.addEventListener(
+'click',
+async e=>{
+
+const btn=
+e.target.closest('.smallAdmin');
+
+if(!btn)return;
+
+const id=
+Number(btn.dataset.id);
+
+const action=
+btn.dataset.action;
+
+if(!id)return;
+
+
+if(action==='pin'){
+
+const pin=
+prompt(
+'Neue 6-stellige PIN für diesen Spieler:'
+);
+
+if(!pin)return;
+
+if(!/^\d{6}$/.test(pin)){
+
+return msg(
+$('adminStatus'),
+'Die PIN muss genau 6 Ziffern enthalten.'
+);
+
+}
+
+const session=
+(await supabase.auth.getSession())
+.data.session;
+
+const res=
+await fetch(
+SUPABASE_URL+
+'/functions/v1/player-auth',
+{
+method:'POST',
+
+headers:{
+'Content-Type':
+'application/json',
+
+'Authorization':
+'Bearer '+
+(session?.access_token||'')
+},
+
+body:JSON.stringify({
+action:'set_pin',
+player_id:id,
+pin
+})
+}
+);
+
+const body=
+await res.json();
+
+if(!res.ok){
+
+msg(
+$('adminStatus'),
+body.error||
+'PIN konnte nicht gesetzt werden.'
+);
+
+}
+else{
+
+msg(
+$('adminStatus'),
+'PIN wurde erfolgreich gesetzt.',
+true
+);
+
+await loadPlayerAdmin();
+
+}
+
+return;
+
+}
+
+
+if(action==='active'){
+
+const row=
+await supabase
+.from('players')
+.select('active')
+.eq('id',id)
+.single();
+
+if(row.error)return;
+
+const session=
+(await supabase.auth.getSession())
+.data.session;
+
+const res=
+await fetch(
+SUPABASE_URL+
+'/functions/v1/player-auth',
+{
+method:'POST',
+
+headers:{
+'Content-Type':
+'application/json',
+
+'Authorization':
+'Bearer '+
+(session?.access_token||'')
+},
+
+body:JSON.stringify({
+action:'set_active',
+player_id:id,
+active:!row.data.active
+})
+}
+);
+
+const body=
+await res.json();
+
+if(!res.ok){
+
+msg(
+$('adminStatus'),
+body.error||
+'Status konnte nicht geändert werden.'
+);
+
+}
+else{
+
+msg(
+$('adminStatus'),
+'Spielerstatus geändert.',
+true
+);
+
+await loadPlayerAdmin();
+
+}
+
+return;
+
+}
+
+
+if(action==='stamm'){
+
+const row=
+await supabase
+.from('players')
+.select('is_stammspieler')
+.eq('id',id)
+.single();
+
+if(row.error)return;
+
+const r=
+await supabase
+.from('players')
+.update({
+is_stammspieler:
+!row.data.is_stammspieler
+})
+.eq('id',id);
+
+if(r.error){
+
+msg(
+$('adminStatus'),
+r.error.message
+);
+
+}
+else{
+
+await loadPlayerAdmin();
+
+}
+
+}
+
+});
 
 
 $('logout')
