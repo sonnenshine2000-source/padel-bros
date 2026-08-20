@@ -5,209 +5,858 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Padel Bros</title>
 <style>
+:root{
+--bg:#f5f7f8;
+--card:#fff;
+--ink:#132018;
+--muted:#6b7280;
+--green:#35d07f;
+--green2:#18a95d;
+--blue:#2563eb;
+--red:#ef4444;
+--line:#e5e7eb;
+--dark:#101814;
+--shadow:0 12px 35px #00000010
+}
+
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f6f8;color:#17202a}
-header{background:#111827;color:#fff;padding:20px 18px}
-header h1{margin:0 0 4px;font-size:24px}
-main{max-width:900px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:18px;padding:20px;margin:14px 0;box-shadow:0 4px 16px #0001}
-h2{margin:0 0 12px}
-.muted{color:#667085;font-size:14px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.choice{border:2px solid #ddd;border-radius:14px;padding:17px;cursor:pointer;background:#fff;text-align:left}
-.choice:hover{border-color:#111827}
-.choice.selected{border-color:#111827;background:#eef2f7}
-button{padding:12px 16px;border:0;border-radius:10px;background:#111827;color:#fff;font-weight:700;cursor:pointer}
-button:disabled{opacity:.5;cursor:not-allowed}
-.login{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.status{margin-top:12px;padding:10px;border-radius:10px}
-.ok{background:#ecfdf3;color:#067647}
-.err{background:#fef3f2;color:#b42318}
-.list{display:grid;gap:8px}
-.row{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
-.pill{padding:4px 8px;border-radius:999px;background:#eef2ff;font-size:12px}
-.court{border:2px solid #e5e7eb;border-radius:16px;padding:16px}
-.court h3{margin:0 0 10px}
-.names{display:grid;gap:5px}
-.admin-box{border:2px solid #c7d2fe;background:#f8faff}
-.scoregrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.scoregrid input{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px}
-@media(max-width:650px){.grid{grid-template-columns:1fr}}
+
+body{
+margin:0;
+font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
+background:var(--bg);
+color:var(--ink)
+}
+
+button{font:inherit}
+
+.hidden{display:none!important}
+
+.top{
+background:var(--dark);
+color:white;
+position:sticky;
+top:0;
+z-index:20
+}
+
+.topin{
+max-width:1050px;
+margin:auto;
+padding:16px 18px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px
+}
+
+.brand{
+display:flex;
+align-items:center;
+gap:10px;
+font-weight:900;
+font-size:21px
+}
+
+.ball{
+width:38px;
+height:38px;
+border-radius:12px;
+background:var(--green);
+display:grid;
+place-items:center;
+color:#082315
+}
+
+.userbar{
+display:flex;
+align-items:center;
+gap:8px
+}
+
+.userpill{
+font-size:13px;
+color:#d1d5db
+}
+
+.outline{
+border:1px solid #ffffff33;
+background:#ffffff10;
+color:white;
+border-radius:10px;
+padding:9px 12px;
+cursor:pointer
+}
+
+main{
+max-width:1050px;
+margin:auto;
+padding:20px 16px 80px
+}
+
+.hero{
+background:linear-gradient(135deg,#101814,#1a3325);
+color:white;
+border-radius:24px;
+padding:26px;
+box-shadow:var(--shadow);
+margin-bottom:16px
+}
+
+.hero small{
+color:#b9c9bf
+}
+
+.hero h1{
+font-size:31px;
+line-height:1.05;
+margin:7px 0
+}
+
+.hero .date{
+font-size:17px;
+font-weight:700
+}
+
+.grid{
+display:grid;
+grid-template-columns:1.15fr .85fr;
+gap:16px
+}
+
+.card{
+background:var(--card);
+border:1px solid var(--line);
+border-radius:20px;
+padding:20px;
+box-shadow:var(--shadow)
+}
+
+.card h2{
+margin:0 0 5px;
+font-size:19px
+}
+
+.sub{
+color:var(--muted);
+font-size:13px;
+margin-bottom:16px
+}
+
+.pollgrid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px
+}
+
+.vote{
+border:2px solid var(--line);
+background:#fff;
+border-radius:15px;
+padding:14px;
+text-align:left;
+cursor:pointer;
+transition:.15s
+}
+
+.vote:hover{
+transform:translateY(-1px);
+border-color:#c7d2fe
+}
+
+.vote.selected{
+border-color:var(--green2);
+background:#effcf4
+}
+
+.vote b{
+display:block;
+font-size:16px
+}
+
+.vote span{
+font-size:12px;
+color:var(--muted)
+}
+
+.vote:disabled{
+opacity:.55;
+cursor:not-allowed;
+transform:none
+}
+
+.status{
+padding:10px 12px;
+border-radius:12px;
+margin-top:12px;
+font-size:13px;
+background:#f3f4f6
+}
+
+.status.ok{
+background:#ecfdf3;
+color:#067647
+}
+
+.status.err{
+background:#fef2f2;
+color:#b42318
+}
+
+.pollrow{
+padding:13px 0;
+border-bottom:1px solid var(--line)
+}
+
+.pollrow:last-child{
+border-bottom:0
+}
+
+.pollhead{
+display:flex;
+justify-content:space-between;
+gap:10px;
+font-weight:800
+}
+
+.count{
+background:#eef2ff;
+color:#3730a3;
+border-radius:999px;
+padding:3px 8px;
+font-size:12px
+}
+
+.names{
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+margin-top:8px
+}
+
+.namechip{
+background:#f3f4f6;
+border-radius:999px;
+padding:5px 9px;
+font-size:12px
+}
+
+.star{
+color:#f59e0b
+}
+
+.courts{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px
+}
+
+.court{
+border-radius:18px;
+padding:17px;
+color:white;
+min-height:190px
+}
+
+.court5{
+background:linear-gradient(145deg,#159957,#0f6f40)
+}
+
+.court1{
+background:linear-gradient(145deg,#2563eb,#173e9d)
+}
+
+.court h3{
+margin:0;
+font-size:17px
+}
+
+.court .time{
+font-size:27px;
+font-weight:900;
+margin:3px 0 13px
+}
+
+.player{
+background:#ffffff18;
+border:1px solid #ffffff24;
+padding:9px 10px;
+border-radius:10px;
+margin-top:6px;
+font-size:14px
+}
+
+.badge{
+font-size:11px;
+background:#ffffff22;
+border-radius:999px;
+padding:3px 7px;
+margin-left:5px
+}
+
+.list{
+display:grid;
+gap:9px
+}
+
+.item{
+border:1px solid var(--line);
+border-radius:13px;
+padding:12px
+}
+
+.pay{
+display:flex;
+justify-content:space-between;
+gap:10px;
+align-items:center
+}
+
+.pay small{
+color:var(--muted)
+}
+
+.pay a{
+color:#2563eb;
+font-weight:700;
+text-decoration:none
+}
+
+.open{
+color:#b45309
+}
+
+.paid{
+color:#15803d
+}
+
+.admin{
+border:2px solid #c7d2fe;
+background:#f8faff
+}
+
+.admin button,
+.primary{
+border:0;
+background:var(--dark);
+color:white;
+border-radius:11px;
+padding:11px 14px;
+font-weight:800;
+cursor:pointer
+}
+
+.login{
+min-height:100vh;
+display:grid;
+place-items:center;
+padding:20px;
+background:linear-gradient(145deg,#0e1712,#183b28)
+}
+
+.loginbox{
+width:min(440px,100%);
+background:white;
+border-radius:25px;
+padding:28px;
+box-shadow:0 25px 70px #0005;
+text-align:center
+}
+
+.loginlogo{
+width:70px;
+height:70px;
+margin:auto;
+border-radius:22px;
+background:var(--green);
+display:grid;
+place-items:center;
+font-size:34px
+}
+
+.google{
+width:100%;
+padding:14px;
+border:1px solid var(--line);
+background:white;
+border-radius:12px;
+font-weight:800;
+cursor:pointer;
+margin-top:18px
+}
+
+.denied{
+color:#b42318;
+background:#fff1f2;
+border-radius:12px;
+padding:12px;
+margin-top:14px
+}
+
+@media(max-width:760px){
+
+.grid{
+grid-template-columns:1fr
+}
+
+.courts{
+grid-template-columns:1fr
+}
+
+.pollgrid{
+grid-template-columns:1fr
+}
+
+.topin{
+padding:12px 14px
+}
+
+.userpill{
+display:none
+}
+
+}
 </style>
 </head>
 
 <body>
-<header>
-<h1>🎾 Padel Bros</h1>
-<div>Dienstag · Court 5 18:30 · Court 1 19:00</div>
+
+<div id="loginView" class="login">
+
+<div class="loginbox">
+
+<div class="loginlogo">🎾</div>
+
+<h1>Padel Bros</h1>
+
+<p style="color:#6b7280">
+Deine private Padel-Gruppe
+</p>
+
+<button id="google" class="google">
+🔵 Mit Google anmelden
+</button>
+
+<div id="loginStatus"></div>
+
+</div>
+
+</div>
+
+
+<div id="appView" class="hidden">
+
+<header class="top">
+
+<div class="topin">
+
+<div class="brand">
+
+<div class="ball">🎾</div>
+
+Padel Bros
+
+</div>
+
+<div class="userbar">
+
+<span id="who" class="userpill"></span>
+
+<button id="logout" class="outline">
+Abmelden
+</button>
+
+</div>
+
+</div>
+
 </header>
+
 
 <main>
 
-<section class="card">
-<h2>🔐 Anmeldung <span id="who" class="muted"></span></h2>
-<div class="login">
-<button id="google">🔵 Mit Google anmelden</button>
-<button id="logout" style="display:none">Abmelden</button>
+
+<section class="hero">
+
+<small>NÄCHSTER SPIELTAG</small>
+
+<h1 id="heroDate">
+Dienstag
+</h1>
+
+<div class="date">
+🎾 Court 5 · 18:30 Uhr
+&nbsp; · &nbsp;
+Court 1 · 19:00 Uhr
 </div>
-<div id="loginStatus" class="muted" style="margin-top:10px">Noch nicht angemeldet.</div>
+
 </section>
 
-<section class="card">
-<h2>📊 Umfrage</h2>
-<p id="pollInfo" class="muted">Offen bis Dienstag 17:00 Uhr.</p>
 
 <div class="grid">
-<button class="choice" data-response="18:30">
-🟢 <b>Ja, 18:30 Uhr</b><br>
-<span class="muted">Court 5</span>
-</button>
 
-<button class="choice" data-response="19:00">
-🔵 <b>Ja, 19:00 Uhr</b><br>
-<span class="muted">Court 1</span>
-</button>
 
-<button class="choice" data-response="egal">
-🟣 <b>Ja, egal wann</b>
-</button>
+<section class="card">
 
-<button class="choice" data-response="nein">
-🔴 <b>Nein, kann nicht</b>
-</button>
+<h2>📊 Wer ist dabei?</h2>
+
+<div class="sub" id="pollInfo">
+Offen bis Dienstag 17:00 Uhr.
 </div>
+
+
+<div class="pollgrid">
+
+<button class="vote" data-response="18:30">
+
+🟢
+
+<b>18:30 Uhr</b>
+
+<span>
+Court 5
+</span>
+
+</button>
+
+
+<button class="vote" data-response="19:00">
+
+🔵
+
+<b>19:00 Uhr</b>
+
+<span>
+Court 1
+</span>
+
+</button>
+
+
+<button class="vote" data-response="egal">
+
+🟣
+
+<b>Egal wann</b>
+
+<span>
+Ich bin flexibel
+</span>
+
+</button>
+
+
+<button class="vote" data-response="nein">
+
+🔴
+
+<b>Kann nicht</b>
+
+<span>
+Diesmal nicht dabei
+</span>
+
+</button>
+
+</div>
+
 
 <div id="pollStatus"></div>
+
 </section>
 
+
 <section class="card">
-<h2>📋 Abstimmung</h2>
-<div id="pollSummary" class="list">
-<div class="muted">Noch keine Daten.</div>
+
+<h2>👥 Abstimmung</h2>
+
+<div class="sub">
+
+Wer abgestimmt hat, wird hier angezeigt.
+
 </div>
+
+<div id="pollSummary"></div>
+
 </section>
 
-<section class="card">
+</div>
+
+
+
+<section class="card" style="margin-top:16px">
+
 <h2>🏟️ Spielplan</h2>
 
-<div class="grid">
+<div class="sub">
+Die aktuelle Zuordnung für den Spieltag.
+</div>
 
-<div class="court">
-<h3>🎾 Court 5 · 18:30</h3>
-<div id="court5" class="names muted">
+
+<div class="courts">
+
+
+<div class="court court5">
+
+<h3>Court 5</h3>
+
+<div class="time">
+18:30
+</div>
+
+<div id="court5">
 Noch keine Zuordnung.
 </div>
+
 </div>
 
-<div class="court">
-<h3>🎾 Court 1 · 19:00</h3>
-<div id="court1" class="names muted">
+
+<div class="court court1">
+
+<h3>Court 1</h3>
+
+<div class="time">
+19:00
+</div>
+
+<div id="court1">
 Noch keine Zuordnung.
 </div>
-</div>
 
 </div>
+
+
+</div>
+
 
 <div id="scheduleStatus"></div>
+
 </section>
 
-<section id="adminCard" class="card admin-box" style="display:none">
-<h2>👑 Admin</h2>
-<p class="muted">
-Daniel kann den Spielplan erzeugen und Spieler zwischen Courts verschieben.
-</p>
 
-<button id="generate">
+
+<section
+id="adminCard"
+class="card admin hidden"
+style="margin-top:16px"
+>
+
+<h2>👑 Admin</h2>
+
+<div class="sub">
+Spieltag verwalten.
+</div>
+
+<button id="generate" class="primary">
+
 Spielplan jetzt erzeugen
+
 </button>
 
 <div id="adminStatus"></div>
+
 </section>
 
-<section class="card">
-<h2>🏆 Matches</h2>
-<div id="matches"></div>
-</section>
+
+
+<section class="grid" style="margin-top:16px">
+
 
 <section class="card">
+
 <h2>💰 Ersatzspieler</h2>
-<div id="payments">
-<div class="muted">Noch keine Zahlungszuordnungen.</div>
+
+<div class="sub">
+15 € an den vertretenen Stammspieler.
 </div>
+
+<div id="payments">
+
+<div class="sub">
+Keine offenen Zahlungen.
+</div>
+
+</div>
+
 </section>
 
+
 <section class="card">
-<h2>📈 Jahresstatistik</h2>
-<div id="stats" class="muted">
-Statistik folgt mit den gespeicherten Matches.
+
+<h2>🏆 Matches</h2>
+
+<div id="matches">
+
+<div class="sub">
+Noch keine Matches.
 </div>
+
+</div>
+
+</section>
+
+
 </section>
 
 </main>
 
+</div>
+
+
+
 <script type="module">
 
-import {createClient}
-from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+createClient
+}
+from
+'https://esm.sh/@supabase/supabase-js@2';
+
 
 const SUPABASE_URL=
 'https://bqjkpucycdcchncjphtg.supabase.co';
 
+
 const SUPABASE_KEY=
 'sb_publishable_m4a9SFpKEUSnrJDp9FCgSw_NaY90DhN';
 
+
 const FUNCTION_URL=
-SUPABASE_URL+'/functions/v1/generate-schedule';
+SUPABASE_URL+
+'/functions/v1/generate-schedule';
+
 
 const supabase=
-createClient(SUPABASE_URL,SUPABASE_KEY);
+createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
 
 let currentUser=null;
+
 let currentPlayer=null;
+
 let matchDay=null;
 
-const $=id=>document.getElementById(id);
 
-function setMsg(el,text,ok=false){
+const $=
+id=>
+document.getElementById(id);
 
-el.className='status '+(ok?'ok':'err');
+
+const escapeHtml=
+s=>
+String(s??'')
+.replace(
+/[&<>"']/g,
+c=>
+({
+'&':'&amp;',
+'<':'&lt;',
+'>':'&gt;',
+'"':'&quot;',
+"'":'&#39;'
+}[c])
+);
+
+
+function msg(
+el,
+text,
+ok=false
+){
+
+el.className=
+'status '+
+(ok?'ok':'err');
+
 el.textContent=text;
 
 }
 
+
 function label(v){
 
 return {
-'18:30':'18:30 Uhr – Court 5',
-'19:00':'19:00 Uhr – Court 1',
-'egal':'Egal wann',
-'nein':'Kann nicht'
+
+'18:30':
+'18:30 Uhr · Court 5',
+
+'19:00':
+'19:00 Uhr · Court 1',
+
+'egal':
+'Egal wann',
+
+'nein':
+'Kann nicht'
+
 }[v]||v;
 
 }
 
+
 function nextTuesday(){
 
 const d=new Date();
+
 const day=d.getDay();
 
-let add=(2-day+7)%7;
+let add=
+(2-day+7)%7;
 
-if(add===0 && d.getHours()>=17)
+if(
+add===0 &&
+d.getHours()>=17
+)
 add=7;
 
 const x=new Date(d);
 
-x.setDate(d.getDate()+add);
+x.setDate(
+d.getDate()+add
+);
 
-return x.toISOString().slice(0,10);
+return x
+.toISOString()
+.slice(0,10);
 
 }
 
 
-/* NEU: Prüfen ob Umfrage geschlossen ist */
+function niceDate(s){
 
-function isPollClosed(){
+const [
+y,
+m,
+d
+]=
+s
+.split('-')
+.map(Number);
+
+return new Intl.DateTimeFormat(
+'de-DE',
+{
+weekday:'long',
+day:'2-digit',
+month:'long',
+year:'numeric'
+}
+)
+.format(
+new Date(
+y,
+m-1,
+d
+)
+);
+
+}
+
+
+function closed(){
 
 if(!matchDay)
 return false;
@@ -215,209 +864,341 @@ return false;
 if(matchDay.poll_closed)
 return true;
 
-const [y,m,d]=
-matchDay.match_date.split('-').map(Number);
+const [
+y,
+m,
+d
+]=
+matchDay.match_date
+.split('-')
+.map(Number);
 
-const deadline=
-new Date(y,m-1,d,17,0,0,0);
-
-return new Date() >= deadline;
+return new Date()
+>=
+new Date(
+y,
+m-1,
+d,
+17,
+0,
+0
+);
 
 }
 
 
-/* NEU: Buttons und Anzeige aktualisieren */
-
 function updatePollUI(){
 
-const closed=isPollClosed();
+const c=closed();
 
-document.querySelectorAll('.choice').forEach(b=>{
-
-b.disabled=closed;
-
-b.style.cursor=
-closed?'not-allowed':'pointer';
-
-});
+document
+.querySelectorAll('.vote')
+.forEach(
+b=>b.disabled=c
+);
 
 $('pollInfo').textContent=
-closed
+
+c
+
 ?
-'🔒 Umfrage geschlossen – seit Dienstag 17:00 Uhr können keine Antworten mehr geändert werden.'
+
+'🔒 Umfrage geschlossen · seit Dienstag 17:00 Uhr keine Änderungen mehr möglich.'
+
 :
+
 'Offen bis Dienstag 17:00 Uhr.';
 
 }
 
 
-/* LOGIN */
-
 async function load(){
 
-const {data:{session}}=
-await supabase.auth.getSession();
+const {
+data:{
+session
+}
+}=
+await supabase
+.auth
+.getSession();
 
-currentUser=session?.user||null;
+
+currentUser=
+session?.user||null;
+
 
 if(!currentUser){
 
-$('who').textContent='';
-$('loginStatus').textContent=
-'Noch nicht angemeldet.';
-
-$('logout').style.display='none';
-$('adminCard').style.display='none';
+showLogin();
 
 return;
 
 }
 
-$('logout').style.display='';
 
-const {data:player,error}=
+const {
+data:player,
+error
+}=
 await supabase
 .from('players')
-.select('id,name,is_admin,is_stammspieler')
-.eq('auth_user_id',currentUser.id)
+.select(
+'id,name,is_admin,is_stammspieler,paypal_email,auth_user_id'
+)
+.eq(
+'auth_user_id',
+currentUser.id
+)
 .maybeSingle();
+
 
 if(error){
 
-setMsg(
-$('loginStatus'),
-'Spieler konnte nicht geladen werden: '+error.message
+showLogin(
+'Anmeldung konnte nicht geprüft werden.'
 );
 
 return;
 
 }
 
+
+/*
+Nur Spieler, die in der players-Tabelle
+freigeschaltet sind, bekommen Zugang.
+*/
+
+if(!player){
+
+await supabase
+.auth
+.signOut();
+
+showLogin(
+'Dein Google-Konto ist noch nicht für Padel Bros freigeschaltet.'
+);
+
+return;
+
+}
+
+
 currentPlayer=player;
 
+
 $('who').textContent=
-player
-?
-' · '+player.name+(player.is_admin?' 👑':'')
-:
-' · Konto noch nicht zugeordnet';
+player.name+
+(
+player.is_admin
+?' 👑'
+:''
+);
 
-$('loginStatus').textContent=
-player
-?
-'Angemeldet als '+player.name+'.'
-:
-'Google-Konto ist noch keinem Spieler zugeordnet.';
 
-$('adminCard').style.display=
-player?.is_admin?'block':'none';
+$('adminCard')
+.classList
+.toggle(
+'hidden',
+!player.is_admin
+);
+
+
+$('loginView')
+.classList
+.add('hidden');
+
+
+$('appView')
+.classList
+.remove('hidden');
+
 
 await loadAll();
 
 }
 
 
-/* SPIELTAG */
+function showLogin(
+text=''
+){
+
+$('appView')
+.classList
+.add('hidden');
+
+$('loginView')
+.classList
+.remove('hidden');
+
+
+$('loginStatus')
+.innerHTML=
+text
+?
+'<div class="denied">'+
+escapeHtml(text)+
+'</div>'
+:
+'';
+
+}
+
 
 async function loadAll(){
 
-const date=nextTuesday();
+const date=
+nextTuesday();
 
-const {data:days,error}=
+
+const {
+data,
+error
+}=
 await supabase
 .from('match_days')
 .select(
 'id,match_date,poll_open,poll_closed,court_5_cancelled,court_1_cancelled'
 )
-.eq('match_date',date)
+.eq(
+'match_date',
+date
+)
 .maybeSingle();
+
 
 if(error){
 
-setMsg(
+msg(
 $('pollStatus'),
-'Umfrage konnte nicht geladen werden: '+error.message
+error.message
 );
 
 return;
 
 }
 
-if(!days){
 
-$('pollStatus').textContent=
-'Für '+date+' wurde noch kein Spieltag angelegt.';
+if(!data){
+
+$('heroDate')
+.textContent=
+niceDate(date);
+
+$('pollStatus')
+.textContent=
+'Für diesen Dienstag wurde noch kein Spieltag angelegt.';
 
 return;
 
 }
 
-matchDay=days;
 
-await loadPoll();
-await loadAssignments();
-await loadMatches();
-await loadPayments();
+matchDay=data;
+
+
+$('heroDate')
+.textContent=
+niceDate(
+data.match_date
+);
+
+
+await Promise.all([
+loadPoll(),
+loadAssignments(),
+loadMatches(),
+loadPayments()
+]);
 
 }
 
-
-/* UMFRAGE */
 
 async function loadPoll(){
 
 if(!matchDay)
 return;
 
+
 updatePollUI();
 
-if(currentPlayer){
 
-const r=
+const own=
 await supabase
 .from('poll_responses')
 .select('response')
-.eq('match_day_id',matchDay.id)
-.eq('player_id',currentPlayer.id)
+.eq(
+'match_day_id',
+matchDay.id
+)
+.eq(
+'player_id',
+currentPlayer.id
+)
 .maybeSingle();
 
-if(r.data?.response){
 
 document
-.querySelectorAll('.choice')
-.forEach(b=>
+.querySelectorAll('.vote')
+.forEach(
+b=>
 b.classList.toggle(
 'selected',
-b.dataset.response===r.data.response
+b.dataset.response===
+own.data?.response
 )
 );
 
-setMsg(
+
+if(own.data?.response){
+
+msg(
 $('pollStatus'),
 
-isPollClosed()
+closed()
+
 ?
-'🔒 Deine letzte Antwort: '+label(r.data.response)
+
+'🔒 Deine letzte Antwort: '+
+label(
+own.data.response
+)
+
 :
-'Deine Antwort: '+label(r.data.response),
+
+'Deine Antwort: '+
+label(
+own.data.response
+),
 
 true
 );
 
 }
 
-}
 
-const {data,resErr}=await fetchPoll();
+const q=
+await supabase
+.from('poll_responses')
+.select(
+'response,players(name,is_stammspieler)'
+)
+.eq(
+'match_day_id',
+matchDay.id
+);
 
-if(resErr){
 
-$('pollSummary').innerHTML=
-'<div class="muted">Abstimmungen konnten nicht geladen werden.</div>';
+if(q.error){
+
+$('pollSummary')
+.textContent=
+'Abstimmungen konnten nicht geladen werden.';
 
 return;
 
 }
+
 
 const groups={
 '18:30':[],
@@ -426,137 +1207,184 @@ const groups={
 'nein':[]
 };
 
-(data||[]).forEach(r=>{
 
-if(groups[r.response])
+(q.data||[])
+.forEach(
+r=>
 groups[r.response]
-.push(r.players?.name||'Spieler');
+?.push(r.players)
+);
 
-});
 
-$('pollSummary').innerHTML=
-Object.entries(groups).map(([k,v])=>
+$('pollSummary')
+.innerHTML=
 
-`<div class="row">
-<span><b>${label(k)}</b></span>
-<span class="pill">${v.length}</span>
+Object
+.entries(groups)
+.map(
+([k,arr])=>
+
+`
+
+<div class="pollrow">
+
+<div class="pollhead">
+
+<span>
+${label(k)}
+</span>
+
+<span class="count">
+${arr.length}
+</span>
+
 </div>
-${v.length?
-'<div class="muted">'+v.join(', ')+'</div>':
-''}`
 
-).join('');
+
+<div class="names">
+
+${
+arr.length
+
+?
+
+arr
+.map(
+p=>
+`
+
+<span class="namechip">
+
+${escapeHtml(
+p?.name||
+'Spieler'
+)}
+
+${
+p?.is_stammspieler
+
+?
+
+'<span class="star">⭐</span>'
+
+:
+
+''
+}
+
+</span>
+
+`
+)
+.join('')
+
+:
+
+'<span class="sub">Noch niemand</span>'
 
 }
 
+</div>
 
-async function fetchPoll(){
+</div>
 
-const q=
-await supabase
-.from('poll_responses')
-.select('response,players(name)')
-.eq('match_day_id',matchDay.id);
-
-return {
-data:q.data,
-resErr:q.error
-};
+`
+)
+.join('');
 
 }
 
-
-/* UMFRAGE SPEICHERN */
 
 document
-.querySelectorAll('.choice')
-.forEach(btn=>btn.onclick=async()=>{
+.querySelectorAll('.vote')
+.forEach(
+btn=>
 
-if(isPollClosed()){
+btn.onclick=
+async()=>{
+
+if(closed()){
 
 updatePollUI();
 
-return setMsg(
+return msg(
 $('pollStatus'),
-'🔒 Die Umfrage ist geschlossen. Änderungen sind nicht mehr möglich.'
+'🔒 Die Umfrage ist geschlossen.'
 );
 
 }
 
-if(!currentUser)
-return setMsg(
-$('pollStatus'),
-'Bitte zuerst anmelden.'
-);
-
-if(!currentPlayer)
-return setMsg(
-$('pollStatus'),
-'Dein Konto ist noch keinem Spieler zugeordnet.'
-);
-
-if(!matchDay)
-return setMsg(
-$('pollStatus'),
-'Kein Spieltag gefunden.'
-);
-
-document
-.querySelectorAll('.choice')
-.forEach(b=>b.classList.remove('selected'));
-
-btn.classList.add('selected');
-
-const now=
-new Date().toISOString();
 
 const existing=
 await supabase
 .from('poll_responses')
 .select('id')
-.eq('match_day_id',matchDay.id)
-.eq('player_id',currentPlayer.id)
+.eq(
+'match_day_id',
+matchDay.id
+)
+.eq(
+'player_id',
+currentPlayer.id
+)
 .maybeSingle();
 
-let result;
 
-if(existing.data?.id){
+const payload={
+response:
+btn.dataset.response,
 
-result=
+updated_at:
+new Date()
+.toISOString()
+};
+
+
+const result=
+
+existing.data?.id
+
+?
+
 await supabase
 .from('poll_responses')
-.update({
-response:btn.dataset.response,
-updated_at:now
-})
-.eq('id',existing.data.id);
+.update(payload)
+.eq(
+'id',
+existing.data.id
+)
 
-}else{
+:
 
-result=
 await supabase
 .from('poll_responses')
 .insert({
-match_day_id:matchDay.id,
-player_id:currentPlayer.id,
-response:btn.dataset.response,
-updated_at:now
+...payload,
+match_day_id:
+matchDay.id,
+player_id:
+currentPlayer.id
 });
 
-}
 
 if(result.error){
 
-setMsg(
+msg(
 $('pollStatus'),
-'Speichern fehlgeschlagen: '+result.error.message
+'Speichern fehlgeschlagen: '+
+result.error.message
 );
 
-}else{
+}
 
-setMsg(
+else{
+
+msg(
 $('pollStatus'),
-'Gespeichert: '+label(btn.dataset.response),
+'Gespeichert: '+
+label(
+btn.dataset.response
+),
 true
 );
 
@@ -564,10 +1392,9 @@ await loadPoll();
 
 }
 
-});
+}
+);
 
-
-/* SPIELPLAN */
 
 async function loadAssignments(){
 
@@ -577,106 +1404,182 @@ await supabase
 .select(
 'court,position,manually_changed,players(name,is_stammspieler)'
 )
-.eq('match_day_id',matchDay.id)
+.eq(
+'match_day_id',
+matchDay.id
+)
 .order('court')
 .order('position');
 
+
 if(q.error){
 
-setMsg(
+msg(
 $('scheduleStatus'),
-'Spielplan konnte nicht geladen werden: '+q.error.message
+q.error.message
 );
 
 return;
 
 }
 
-const c5=
-(q.data||[])
-.filter(x=>x.court==='court5');
 
-const c1=
-(q.data||[])
-.filter(x=>x.court==='court1');
+const render=
+(
+arr,
+el
+)=>
 
-$('court5').innerHTML=
-c5.length
+$(el).innerHTML=
+
+arr.length
+
 ?
-c5.map(x=>
-`<div>${x.players.name}
-${x.players.is_stammspieler?' ⭐':''}
-${x.manually_changed?' ✋':''}
-</div>`
-).join('')
-:
-'Noch keine Zuordnung.';
 
-$('court1').innerHTML=
-c1.length
+arr
+.map(
+x=>
+`
+
+<div class="player">
+
+<b>
+${escapeHtml(
+x.players?.name||
+'Spieler'
+)}
+</b>
+
+${
+x.players?.is_stammspieler
+
 ?
-c1.map(x=>
-`<div>${x.players.name}
-${x.players.is_stammspieler?' ⭐':''}
-${x.manually_changed?' ✋':''}
-</div>`
-).join('')
+
+'<span class="badge">⭐ Stammspieler</span>'
+
 :
-'Noch keine Zuordnung.';
+
+'<span class="badge">Ersatz</span>'
+
+}
+
+${
+x.manually_changed
+
+?
+
+'<span class="badge">✋ geändert</span>'
+
+:
+
+''
+}
+
+</div>
+
+`
+)
+.join('')
+
+:
+
+'<div class="player">Noch keine Zuordnung.</div>';
+
+
+render(
+(q.data||[])
+.filter(
+x=>x.court==='court5'
+),
+'court5'
+);
+
+
+render(
+(q.data||[])
+.filter(
+x=>x.court==='court1'
+),
+'court1'
+);
 
 }
 
 
-/* SPIELPLAN GENERIEREN */
-
-$('generate').onclick=async()=>{
+$('generate')
+.onclick=
+async()=>{
 
 if(!currentPlayer?.is_admin)
 return;
 
-setMsg(
+
+msg(
 $('adminStatus'),
 'Spielplan wird erzeugt …',
 true
 );
 
-const {data:{session}}=
-await supabase.auth.getSession();
+
+const {
+data:{
+session
+}
+}=
+await supabase
+.auth
+.getSession();
+
 
 const res=
 await fetch(
 FUNCTION_URL,
 {
 method:'POST',
+
 headers:{
-'Content-Type':'application/json',
+'Content-Type':
+'application/json',
+
 'Authorization':
-'Bearer '+session.access_token
+'Bearer '+
+session.access_token
 },
-body:JSON.stringify({
-match_day_id:matchDay.id
+
+body:
+JSON.stringify({
+match_day_id:
+matchDay.id
 })
+
 }
 );
+
 
 let body={};
 
 try{
-body=await res.json();
+
+body=
+await res.json();
+
 }catch{}
+
 
 if(!res.ok){
 
-setMsg(
+msg(
 $('adminStatus'),
 body.message||
 body.error||
 ('Fehler '+res.status)
 );
 
-}else{
+}
 
-setMsg(
+else{
+
+msg(
 $('adminStatus'),
 'Spielplan wurde erzeugt.',
 true
@@ -689,61 +1592,104 @@ await loadAssignments();
 };
 
 
-/* MATCHES */
-
 async function loadMatches(){
 
 const q=
 await supabase
 .from('matches')
 .select('*')
-.eq('match_day_id',matchDay.id)
+.eq(
+'match_day_id',
+matchDay.id
+)
 .order('court');
+
 
 if(q.error){
 
-$('matches').innerHTML=
-'<div class="muted">Matches konnten nicht geladen werden.</div>';
+$('matches')
+.innerHTML=
+'<div class="sub">Matches konnten nicht geladen werden.</div>';
 
 return;
 
 }
+
 
 if(!q.data?.length){
 
-$('matches').innerHTML=
-'<div class="muted">Noch keine Matches angelegt.</div>';
+$('matches')
+.innerHTML=
+'<div class="sub">Noch keine Matches angelegt.</div>';
 
 return;
 
 }
 
-$('matches').innerHTML=
+
+$('matches')
+.innerHTML=
+
 '<div class="list">'+
-q.data.map(m=>
 
-`<div class="row">
-<div>
+q.data
+.map(
+m=>
+`
+
+<div class="item">
+
 <b>
-${m.court==='court5'
-?'Court 5 · 18:30'
-:'Court 1 · 19:00'}
-</b>
-<br>
-Ergebnis:
-${m.winner?
-'Team '+m.winner:
-'offen'}
-</div>
-</div>`
 
-).join('')+
+${
+m.court==='court5'
+
+?
+
+'Court 5 · 18:30'
+
+:
+
+'Court 1 · 19:00'
+
+}
+
+</b>
+
+<br>
+
+<span class="sub">
+
+Ergebnis:
+
+${
+m.winner
+
+?
+
+'Team '+
+escapeHtml(m.winner)
+
+:
+
+'offen'
+
+}
+
+</span>
+
+</div>
+
+`
+)
+.join('')
+
++
+
 '</div>';
 
 }
 
-
-/* ZAHLUNGEN */
 
 async function loadPayments(){
 
@@ -753,101 +1699,158 @@ await supabase
 .select(
 'amount,paid,substitute_id,stammspieler_id,players_sub:substitute_id(name),players_main:stammspieler_id(name,paypal_email)'
 )
-.eq('match_day_id',matchDay.id);
+.eq(
+'match_day_id',
+matchDay.id
+);
 
-if(q.error){
 
-$('payments').innerHTML=
-'<div class="muted">Zahlungen konnten nicht geladen werden.</div>';
+if(
+q.error||
+!q.data?.length
+){
+
+$('payments')
+.innerHTML=
+'<div class="sub">Keine offenen Zahlungen.</div>';
 
 return;
 
 }
 
-if(!q.data?.length){
 
-$('payments').innerHTML=
-'<div class="muted">Noch keine Zahlungszuordnungen.</div>';
+$('payments')
+.innerHTML=
 
-return;
-
-}
-
-$('payments').innerHTML=
 '<div class="list">'+
 
-q.data.map(p=>
+q.data
+.map(
+p=>
+`
 
-`<div class="row">
+<div class="item pay">
 
 <div>
-<b>${p.players_sub?.name||'Ersatzspieler'}</b>
+
+<b>
+${escapeHtml(
+p.players_sub?.name||
+'Ersatzspieler'
+)}
+</b>
+
 →
-${p.players_main?.name||'Stammspieler'}
+
+${escapeHtml(
+p.players_main?.name||
+'Stammspieler'
+)}
+
 <br>
 
-${Number(p.amount).toFixed(2)}
-€ · PayPal:
-${p.players_main?.paypal_email||'—'}
+<small>
+
+${Number(
+p.amount
+)
+.toFixed(2)}
+€
+
+· PayPal:
+
+${escapeHtml(
+p.players_main?.paypal_email||
+'—'
+)}
+
+</small>
 
 </div>
 
-<span class="pill">
-${p.paid?'Bezahlt':'offen'}
+
+<span class="${
+p.paid
+?'paid'
+:'open'
+}">
+
+${
+p.paid
+?'✓ Bezahlt'
+:'Offen'
+}
+
 </span>
 
-</div>`
+</div>
 
-).join('')+
+`
+)
+.join('')
+
++
 
 '</div>';
 
 }
 
 
-/* GOOGLE LOGIN */
+$('google')
+.onclick=
+async()=>{
 
-$('google').onclick=async()=>{
-
-const {error}=
-await supabase.auth.signInWithOAuth({
+const {
+error
+}=
+await supabase
+.auth
+.signInWithOAuth({
 
 provider:'google',
 
 options:{
-redirectTo:location.origin
+redirectTo:
+location.origin
 }
 
 });
 
-if(error)
-setMsg(
-$('loginStatus'),
+
+if(error){
+
+$('loginStatus')
+.innerHTML=
+'<div class="denied">'+
+escapeHtml(
 error.message
-);
+)+
+'</div>';
+
+}
 
 };
 
 
-/* LOGOUT */
+$('logout')
+.onclick=
+async()=>{
 
-$('logout').onclick=async()=>{
-
-await supabase.auth.signOut();
+await supabase
+.auth
+.signOut();
 
 location.reload();
 
 };
 
 
-/* AUTH */
-
-supabase.auth.onAuthStateChange(
+supabase
+.auth
+.onAuthStateChange(
 ()=>load()
 );
 
-
-/* START */
 
 load();
 
