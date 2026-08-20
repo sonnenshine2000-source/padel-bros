@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Padel Bros</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f6f8;color:#17202a}
+header{background:#111827;color:#fff;padding:20px 18px}
+header h1{margin:0 0 4px;font-size:24px}
+main{max-width:900px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:18px;padding:20px;margin:14px 0;box-shadow:0 4px 16px #0001}
+h2{margin:0 0 12px}
+.muted{color:#667085;font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.choice{border:2px solid #ddd;border-radius:14px;padding:17px;cursor:pointer;background:#fff;text-align:left}
+.choice:hover{border-color:#111827}
+.choice.selected{border-color:#111827;background:#eef2f7}
+button{padding:12px 16px;border:0;border-radius:10px;background:#111827;color:#fff;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.login{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.status{margin-top:12px;padding:10px;border-radius:10px}
+.ok{background:#ecfdf3;color:#067647}
+.err{background:#fef3f2;color:#b42318}
+.list{display:grid;gap:8px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+.pill{padding:4px 8px;border-radius:999px;background:#eef2ff;font-size:12px}
+.court{border:2px solid #e5e7eb;border-radius:16px;padding:16px}
+.court h3{margin:0 0 10px}
+.names{display:grid;gap:5px}
+.admin-box{border:2px solid #c7d2fe;background:#f8faff}
+.scoregrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.scoregrid input{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎾 Padel Bros</h1>
+  <div>Dienstag · Court 5 18:30 · Court 1 19:00</div>
+</header>
+
+<main>
+<section class="card">
+  <h2>🔐 Anmeldung <span id="who" class="muted"></span></h2>
+  <div class="login">
+    <button id="google">🔵 Mit Google anmelden</button>
+    <button id="logout" style="display:none">Abmelden</button>
+  </div>
+  <div id="loginStatus" class="muted" style="margin-top:10px">Noch nicht angemeldet.</div>
+</section>
+
+<section class="card">
+  <h2>📊 Umfrage</h2>
+  <p class="muted">Offen bis Dienstag 17:00 Uhr.</p>
+  <div class="grid">
+    <button class="choice" data-response="18:30">🟢 <b>Ja, 18:30 Uhr</b><br><span class="muted">Court 5</span></button>
+    <button class="choice" data-response="19:00">🔵 <b>Ja, 19:00 Uhr</b><br><span class="muted">Court 1</span></button>
+    <button class="choice" data-response="egal">🟣 <b>Ja, egal wann</b></button>
+    <button class="choice" data-response="nein">🔴 <b>Nein, kann nicht</b></button>
+  </div>
+  <div id="pollStatus"></div>
+</section>
+
+<section class="card">
+  <h2>📋 Abstimmung</h2>
+  <div id="pollSummary" class="list"><div class="muted">Noch keine Daten.</div></div>
+</section>
+
+<section class="card">
+  <h2>🏟️ Spielplan</h2>
+  <div class="grid">
+    <div class="court">
+      <h3>🎾 Court 5 · 18:30</h3>
+      <div id="court5" class="names muted">Noch keine Zuordnung.</div>
+    </div>
+    <div class="court">
+      <h3>🎾 Court 1 · 19:00</h3>
+      <div id="court1" class="names muted">Noch keine Zuordnung.</div>
+    </div>
+  </div>
+  <div id="scheduleStatus"></div>
+</section>
+
+<section id="adminCard" class="card admin-box" style="display:none">
+  <h2>👑 Admin</h2>
+  <p class="muted">Daniel kann den Spielplan erzeugen und Spieler zwischen Courts verschieben.</p>
+  <button id="generate">Spielplan jetzt erzeugen</button>
+  <div id="adminStatus"></div>
+</section>
+
+<section class="card">
+  <h2>🏆 Matches</h2>
+  <div id="matches"></div>
+</section>
+
+<section class="card">
+  <h2>💰 Ersatzspieler</h2>
+  <div id="payments"><div class="muted">Noch keine Zahlungszuordnungen.</div></div>
+</section>
+
+<section class="card">
+  <h2>📈 Jahresstatistik</h2>
+  <div id="stats" class="muted">Statistik folgt mit den gespeicherten Matches.</div>
+</section>
+</main>
+
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL='https://bqjkpucycdcchncjphtg.supabase.co';
+const SUPABASE_KEY='sb_publishable_m4a9SFpKEUSnrJDp9FCgSw_NaY90DhN';
+const FUNCTION_URL=SUPABASE_URL+'/functions/v1/generate-schedule';
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let currentUser=null,currentPlayer=null,matchDay=null;
+
+const $=id=>document.getElementById(id);
+function setMsg(el,text,ok=false){
+  el.className='status '+(ok?'ok':'err');
+  el.textContent=text;
+}
+function label(v){
+  return {'18:30':'18:30 Uhr – Court 5','19:00':'19:00 Uhr – Court 1','egal':'Egal wann','nein':'Kann nicht'}[v]||v;
+}
+function nextTuesday(){
+  const d=new Date(), day=d.getDay();
+  let add=(2-day+7)%7;
+  if(add===0 && d.getHours()>=17) add=7;
+  const x=new Date(d); x.setDate(d.getDate()+add);
+  return x.toISOString().slice(0,10);
+}
+
+async function load(){
+  const {data:{session}}=await supabase.auth.getSession();
+  currentUser=session?.user||null;
+  if(!currentUser){
+    $('who').textContent=''; $('loginStatus').textContent='Noch nicht angemeldet.';
+    $('logout').style.display='none'; $('adminCard').style.display='none';
+    return;
+  }
+  $('logout').style.display='';
+  const {data:player,error}=await supabase.from('players')
+    .select('id,name,is_admin,is_stammspieler')
+    .eq('auth_user_id',currentUser.id).maybeSingle();
+  if(error){setMsg($('loginStatus'),'Spieler konnte nicht geladen werden: '+error.message);return}
+  currentPlayer=player;
+  $('who').textContent=player?(' · '+player.name+(player.is_admin?' 👑':'')):' · Konto noch nicht zugeordnet';
+  $('loginStatus').textContent=player?'Angemeldet als '+player.name+'.':'Google-Konto ist noch keinem Spieler zugeordnet.';
+  $('adminCard').style.display=player?.is_admin?'block':'none';
+  await loadAll();
+}
+
+async function loadAll(){
+  const date=nextTuesday();
+  const {data:days,error}=await supabase.from('match_days')
+    .select('id,match_date,poll_open,poll_closed,court_5_cancelled,court_1_cancelled')
+    .eq('match_date',date).maybeSingle();
+  if(error){setMsg($('pollStatus'),'Umfrage konnte nicht geladen werden: '+error.message);return}
+  if(!days){
+    $('pollStatus').textContent='Für '+date+' wurde noch kein Spieltag angelegt.';
+    return;
+  }
+  matchDay=days;
+  await loadPoll();
+  await loadAssignments();
+  await loadMatches();
+  await loadPayments();
+}
+
+async function loadPoll(){
+  if(!matchDay)return;
+  if(currentPlayer){
+    const r=await supabase.from('poll_responses')
+      .select('response')
+      .eq('match_day_id',matchDay.id).eq('player_id',currentPlayer.id).maybeSingle();
+    if(r.data?.response){
+      document.querySelectorAll('.choice').forEach(b=>b.classList.toggle('selected',b.dataset.response===r.data.response));
+      setMsg($('pollStatus'),'Deine Antwort: '+label(r.data.response),true);
+    }
+  }
+  const {data,resErr}=await fetchPoll();
+  if(resErr){$('pollSummary').innerHTML='<div class="muted">Abstimmungen konnten nicht geladen werden.</div>';return}
+  const groups={'18:30':[],'19:00':[],'egal':[],'nein':[]};
+  (data||[]).forEach(r=>{if(groups[r.response])groups[r.response].push(r.players?.name||'Spieler')});
+  $('pollSummary').innerHTML=Object.entries(groups).map(([k,v])=>
+    `<div class="row"><span><b>${label(k)}</b></span><span class="pill">${v.length}</span></div>
+     ${v.length?'<div class="muted">'+v.join(', ')+'</div>':''}`
+  ).join('');
+}
+async function fetchPoll(){
+  const q=await supabase.from('poll_responses')
+    .select('response,players(name)').eq('match_day_id',matchDay.id);
+  return {data:q.data,resErr:q.error};
+}
+
+document.querySelectorAll('.choice').forEach(btn=>btn.onclick=async()=>{
+  if(!currentUser)return setMsg($('pollStatus'),'Bitte zuerst anmelden.');
+  if(!currentPlayer)return setMsg($('pollStatus'),'Dein Konto ist noch keinem Spieler zugeordnet.');
+  if(!matchDay)return setMsg($('pollStatus'),'Kein Spieltag gefunden.');
+  document.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const now=new Date().toISOString();
+  const existing=await supabase.from('poll_responses').select('id')
+    .eq('match_day_id',matchDay.id).eq('player_id',currentPlayer.id).maybeSingle();
+  let result;
+  if(existing.data?.id) result=await supabase.from('poll_responses')
+    .update({response:btn.dataset.response,updated_at:now}).eq('id',existing.data.id);
+  else result=await supabase.from('poll_responses')
+    .insert({match_day_id:matchDay.id,player_id:currentPlayer.id,response:btn.dataset.response,updated_at:now});
+  if(result.error)setMsg($('pollStatus'),'Speichern fehlgeschlagen: '+result.error.message);
+  else {setMsg($('pollStatus'),'Gespeichert: '+label(btn.dataset.response),true);await loadPoll();}
+});
+
+async function loadAssignments(){
+  const q=await supabase.from('assignments')
+    .select('court,position,manually_changed,players(name,is_stammspieler)')
+    .eq('match_day_id',matchDay.id).order('court').order('position');
+  if(q.error){setMsg($('scheduleStatus'),'Spielplan konnte nicht geladen werden: '+q.error.message);return}
+  const c5=(q.data||[]).filter(x=>x.court==='court5'), c1=(q.data||[]).filter(x=>x.court==='court1');
+  $('court5').innerHTML=c5.length?c5.map(x=>`<div>${x.players.name}${x.players.is_stammspieler?' ⭐':''}${x.manually_changed?' ✋':''}</div>`).join(''):'Noch keine Zuordnung.';
+  $('court1').innerHTML=c1.length?c1.map(x=>`<div>${x.players.name}${x.players.is_stammspieler?' ⭐':''}${x.manually_changed?' ✋':''}</div>`).join(''):'Noch keine Zuordnung.';
+}
+
+$('generate').onclick=async()=>{
+  if(!currentPlayer?.is_admin)return;
+  setMsg($('adminStatus'),'Spielplan wird erzeugt …',true);
+  const {data:{session}}=await supabase.auth.getSession();
+  const res=await fetch(FUNCTION_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+    body:JSON.stringify({match_day_id:matchDay.id})
+  });
+  let body={}; try{body=await res.json()}catch{}
+  if(!res.ok)setMsg($('adminStatus'),body.message||body.error||('Fehler '+res.status));
+  else {setMsg($('adminStatus'),'Spielplan wurde erzeugt.',true);await loadAssignments();}
+};
+
+async function loadMatches(){
+  const q=await supabase.from('matches').select('*').eq('match_day_id',matchDay.id).order('court');
+  if(q.error){$('matches').innerHTML='<div class="muted">Matches konnten nicht geladen werden.</div>';return}
+  if(!q.data?.length){$('matches').innerHTML='<div class="muted">Noch keine Matches angelegt.</div>';return}
+  $('matches').innerHTML='<div class="list">'+q.data.map(m=>`
+    <div class="row"><div><b>${m.court==='court5'?'Court 5 · 18:30':'Court 1 · 19:00'}</b><br>
+    Ergebnis: ${m.winner?('Team '+m.winner):'offen'}</div></div>`).join('')+'</div>';
+}
+async function loadPayments(){
+  const q=await supabase.from('payments')
+    .select('amount,paid,substitute_id,stammspieler_id,players_sub:substitute_id(name),players_main:stammspieler_id(name,paypal_email)')
+    .eq('match_day_id',matchDay.id);
+  if(q.error){$('payments').innerHTML='<div class="muted">Zahlungen konnten nicht geladen werden.</div>';return}
+  if(!q.data?.length){$('payments').innerHTML='<div class="muted">Noch keine Zahlungszuordnungen.</div>';return}
+  $('payments').innerHTML='<div class="list">'+q.data.map(p=>`
+    <div class="row"><div><b>${p.players_sub?.name||'Ersatzspieler'}</b> → ${p.players_main?.name||'Stammspieler'}<br>
+    ${Number(p.amount).toFixed(2)} € · PayPal: ${p.players_main?.paypal_email||'—'}</div>
+    <span class="pill">${p.paid?'Bezahlt':'offen'}</span></div>`).join('')+'</div>';
+}
+
+$('google').onclick=async()=>{
+  const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin}});
+  if(error)setMsg($('loginStatus'),error.message);
+};
+$('logout').onclick=async()=>{await supabase.auth.signOut();location.reload()};
+supabase.auth.onAuthStateChange(()=>load());
+load();
+</script>
+</body>
+</html>
