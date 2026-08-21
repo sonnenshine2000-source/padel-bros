@@ -29,16 +29,17 @@
         <option value="">Spieler auswählen …</option>
       </select>
 
-      <label for="pinInput">6-stellige PIN</label>
+     <label for="pinInput" id="pinLabel">
+  Passwort
+</label>
 
-      <input
-        id="pinInput"
-        class="logininput"
-        type="password"
-        inputmode="numeric"
-        maxlength="6"
-        placeholder="••••••"
-      >
+<input
+  id="pinInput"
+  class="logininput"
+  type="password"
+  autocomplete="current-password"
+  placeholder="Passwort"
+>
 
       <button id="pinLogin" class="google">
         🔐 Anmelden
