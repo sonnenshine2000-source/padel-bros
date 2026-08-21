@@ -101,7 +101,30 @@ export async function unregisterPush() {
 }
 
 export async function loadPushStatus() {
-  if (!state.currentPlayer) return;
+  const button = $('pushEnable');
+
+  if (!button) return;
+
+  let enabled = false;
+
+  try {
+    const registration =
+      await navigator.serviceWorker.getRegistration('./sw.js');
+
+    const subscription =
+      await registration?.pushManager.getSubscription();
+
+    enabled = !!subscription;
+  } catch (error) {
+    console.error('Push-Status konnte nicht geprüft werden:', error);
+  }
+
+  button.textContent = enabled
+    ? '🔔 Push ist aktiv'
+    : '🔕 Push aktivieren';
+
+  button.dataset.enabled = enabled ? '1' : '0';
+}
 
   const q = await supabase
     .from('push_subscriptions')
