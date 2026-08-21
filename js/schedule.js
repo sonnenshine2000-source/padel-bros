@@ -20,13 +20,9 @@ export async function loadAssignments() {
 
   const render = (arr, el) => {
     $(el).innerHTML = arr.length
-      ? arr
-          .map(
-            x => `
+      ? arr.map(x => `
           <div class="player">
-            <b>${escapeHtml(
-              x.players?.name || 'Spieler'
-            )}</b>
+            <b>${escapeHtml(x.players?.name || 'Spieler')}</b>
 
             ${
               x.players?.is_stammspieler
@@ -40,71 +36,47 @@ export async function loadAssignments() {
                 : ''
             }
           </div>
-        `
-          )
-          .join('')
+        `).join('')
       : '<div class="player">Noch keine Zuordnung.</div>';
   };
 
   render(
-    (q.data || []).filter(
-      x => x.court === 'court5'
-    ),
+    (q.data || []).filter(x => x.court === 'court5'),
     'court5'
   );
 
   render(
-    (q.data || []).filter(
-      x => x.court === 'court1'
-    ),
+    (q.data || []).filter(x => x.court === 'court1'),
     'court1'
   );
 }
 
-
-/*
- * Automatischen Push für den fertigen Spielplan senden.
- *
- * Wichtig:
- * Ein Fehler beim Push darf niemals den Spielplan
- * selbst als fehlgeschlagen erscheinen lassen.
- */
-async function sendSchedulePush(matchDay) {
+async function sendSchedulePush() {
   try {
     const {
       data: { session }
     } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
-      console.warn(
-        'Kein Login für Spielplan-Push vorhanden.'
-      );
+      console.warn('Keine Sitzung für Spielplan-Push.');
       return;
     }
 
     const response = await fetch(
-      SUPABASE_URL +
-        '/functions/v1/send-push-v5',
+      SUPABASE_URL + '/functions/v1/send-push-v5',
       {
         method: 'POST',
 
         headers: {
-          'Content-Type':
-            'application/json',
-
-          'Authorization':
-            'Bearer ' +
-            session.access_token
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + session.access_token
         },
 
         body: JSON.stringify({
           type: 'schedule',
           title: '🎾 Spielplan ist fertig',
-          body:
-            'Der Spielplan für ' +
-            matchDay.match_date +
-            ' wurde erstellt.',
-          match_day_id: matchDay.id
+          body: 'Der Spielplan wurde erstellt.',
+          match_day_id: state.matchDay.id
         })
       }
     );
@@ -122,25 +94,29 @@ async function sendSchedulePush(matchDay) {
         'Spielplan-Push fehlgeschlagen:',
         result
       );
-      return;
+    } else {
+      console.log(
+        'Spielplan-Push gesendet:',
+        result
+      );
     }
-
-    console.log(
-      'Spielplan-Push erfolgreich:',
-      result
-    );
   } catch (error) {
     console.warn(
-      'Spielplan-Push konnte nicht gesendet werden:',
+      'Spielplan-Push Fehler:',
       error
     );
   }
 }
 
-
 export function bindSchedule() {
-  $('generate').onclick = async () => {
+  const button = $('generate');
+
+  if (!button) return;
+
+  button.onclick = async () => {
     if (!state.currentPlayer?.is_admin) return;
+
+    button.disabled = true;
 
     msg(
       $('adminStatus'),
@@ -148,74 +124,70 @@ export function bindSchedule() {
       true
     );
 
-    const {
-      data: { session }
-    } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      msg(
-        $('adminStatus'),
-        'Nicht angemeldet.'
-      );
-      return;
-    }
-
-    const res = await fetch(FUNCTION_URL, {
-      method: 'POST',
-
-      headers: {
-        'Content-Type':
-          'application/json',
-
-        'Authorization':
-          'Bearer ' +
-          session.access_token
-      },
-
-      body: JSON.stringify({
-        match_day_id:
-          state.matchDay.id
-      })
-    });
-
-    let body = {};
-
     try {
-      body = await res.json();
-    } catch {
-      body = {};
-    }
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
 
-    if (!res.ok) {
-      msg(
-        $('adminStatus'),
-        body.message ||
+      if (!session?.access_token) {
+        msg(
+          $('adminStatus'),
+          'Nicht angemeldet.'
+        );
+        return;
+      }
+
+      const res = await fetch(FUNCTION_URL, {
+        method: 'POST',
+
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':
+            'Bearer ' + session.access_token
+        },
+
+        body: JSON.stringify({
+          match_day_id: state.matchDay.id
+        })
+      });
+
+      let body = {};
+
+      try {
+        body = await res.json();
+      } catch {
+        body = {};
+      }
+
+      if (!res.ok) {
+        msg(
+          $('adminStatus'),
+          body.message ||
           body.error ||
           ('Fehler ' + res.status)
+        );
+
+        return;
+      }
+
+      msg(
+        $('adminStatus'),
+        'Spielplan wurde erzeugt.',
+        true
       );
 
-      return;
+      await loadAssignments();
+
+      await sendSchedulePush();
+
+    } catch (error) {
+      msg(
+        $('adminStatus'),
+        error?.message ||
+        'Fehler beim Erzeugen des Spielplans.'
+      );
+    } finally {
+      button.disabled = false;
     }
-
-    /*
-     * Der Spielplan wurde erfolgreich erzeugt.
-     */
-    msg(
-      $('adminStatus'),
-      'Spielplan wurde erzeugt.',
-      true
-    );
-
-    await loadAssignments();
-
-    /*
-     * Danach Push an alle registrierten Geräte.
-     *
-     * Dieser Fehler darf den Spielplan nicht
-     * beeinflussen.
-     */
-    await sendSchedulePush(
-      state.matchDay
-    );
   };
 }
