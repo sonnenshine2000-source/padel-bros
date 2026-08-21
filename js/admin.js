@@ -1,4 +1,5 @@
 import { supabase, SUPABASE_URL } from './supabase.js';
+import { sendTestPush } from './notifications.js';
 import { state } from './state.js';
 import { $, msg, escapeHtml } from './utils.js';
 
@@ -49,6 +50,38 @@ export async function loadPlayerAdmin() {
 
 export function bindAdmin() {
   document.addEventListener('click', async e => {
+        const testPushBtn = e.target.closest('#testPush');
+
+    if (testPushBtn) {
+      testPushBtn.disabled = true;
+      testPushBtn.textContent = '⏳ Wird gesendet …';
+
+      try {
+        const result = await sendTestPush();
+
+        if (result.ok) {
+          msg(
+            $('adminStatus'),
+            '🔔 Test-Push wurde gesendet.',
+            true
+          );
+        } else {
+          msg(
+            $('adminStatus'),
+            result.error || 'Test-Push konnte nicht gesendet werden.'
+          );
+        }
+      } catch (error) {
+        msg(
+          $('adminStatus'),
+          error?.message || 'Fehler beim Test-Push.'
+        );
+      }
+
+      testPushBtn.disabled = false;
+      testPushBtn.textContent = '🔔 Test-Push senden';
+      return;
+    }
     const btn = e.target.closest('.smallAdmin');
     if (!btn) return;
 
