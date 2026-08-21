@@ -33,7 +33,7 @@ export async function registerPush() {
   const json = subscription.toJSON();
 
   const { error } = await supabase
-    .from('push_subscriptions')
+    .from('_subscriptions')
     .upsert({
       player_id: state.currentPlayer.id,
       endpoint: json.endpoint,
@@ -49,13 +49,13 @@ export async function registerPush() {
   return { ok: true };
 }
 
-export async function unregisterPush() {
+export async function unregister() {
   const registration = await navigator.serviceWorker.getRegistration('./sw.js');
-  const subscription = await registration?.pushManager.getSubscription();
+  const subscription = await registration?.Manager.getSubscription();
 
   if (subscription) {
     await supabase
-      .from('push_subscriptions')
+      .from('_subscriptions')
       .update({ enabled: false, updated_at: new Date().toISOString() })
       .eq('endpoint', subscription.endpoint);
 
@@ -63,21 +63,21 @@ export async function unregisterPush() {
   }
 }
 
-export async function loadPushStatus() {
+export async function loadStatus() {
   if (!state.currentPlayer) return;
 
   const q = await supabase
-    .from('push_subscriptions')
+    .from('_subscriptions')
     .select('id,enabled')
     .eq('player_id', state.currentPlayer.id)
     .eq('enabled', true)
     .limit(1);
 
   const enabled = !!q.data?.length;
-  const button = $('pushEnable');
+  const button = $('Enable');
   if (!button) return;
 
-  button.textContent = enabled ? '🔔 Push ist aktiv' : '🔕 Push aktivieren';
+  button.textContent = enabled ? '🔔  ist aktiv' : '🔕 Push aktivieren';
   button.dataset.enabled = enabled ? '1' : '0';
 }
 
@@ -111,7 +111,7 @@ export function bindPush() {
 export async function sendTestPush() {
   const { data: { session } } = await supabase.auth.getSession();
 
-  const response = await fetch(SUPABASE_URL + '/functions/v1/send-push', {
+  const response = await fetch(SUPABASE_URL + '/functions/v1/send-push-v2', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
