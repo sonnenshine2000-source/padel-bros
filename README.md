@@ -29,3 +29,14 @@ Nur den betroffenen Bereich ändern:
 - Spielplan → `js/schedule.js`
 - Admin → `js/admin.js`
 - Design → `css/style.css`
+
+## Web-Push
+
+Die Datenbanktabelle `push_subscriptions` ist angelegt. Jeder Spieler aktiviert Push einmal auf seinem Gerät über **🔕 Push aktivieren**.
+
+Für das eigentliche Senden braucht die Supabase-Edge-Function `send-push` noch die VAPID-Schlüssel als Secrets:
+- `VAPID_PUBLIC_KEY` = der öffentliche Schlüssel aus `js/config.js`
+- `VAPID_PRIVATE_KEY` = `lEEIsZ0OFZXamPrYdjmOyGYiTafHa6snUQ1BUvT7Hf4`
+- `VAPID_SUBJECT` = eine Kontakt-Mailadresse, z.B. `mailto:admin@padel-bros.de`
+
+Der private Schlüssel darf **nicht** in GitHub oder Frontend-Code stehen.

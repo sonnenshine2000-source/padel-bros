@@ -7,6 +7,7 @@ import { loadAssignments, bindSchedule } from './schedule.js';
 import { loadMatches } from './matches.js';
 import { loadPayments } from './payments.js';
 import { loadPlayerAdmin, bindAdmin } from './admin.js';
+import { bindPush, loadPushStatus } from './notifications.js';
 
 export async function loadAll() {
   const date = nextTuesday();
@@ -41,6 +42,8 @@ export async function loadAll() {
     loadPayments()
   ]);
 
+  await loadPushStatus();
+
   if (state.currentPlayer?.is_admin) {
     await loadPlayerAdmin();
   }
@@ -50,5 +53,6 @@ bindAuth(loadAll);
 bindPoll();
 bindSchedule();
 bindAdmin();
+bindPush();
 
 loadSession(loadAll);
