@@ -3,6 +3,7 @@ import { sendTestPush } from './notifications.js';
 import { state } from './state.js';
 import { $, msg, escapeHtml } from './utils.js';
 
+
 function formatError(value) {
   if (!value) return 'Unbekannter Fehler.';
 
@@ -16,6 +17,7 @@ function formatError(value) {
     return String(value);
   }
 }
+
 
 async function sendBroadcastPush(type, title, body) {
   const {
@@ -96,6 +98,7 @@ export async function loadPlayerAdmin() {
       '<div class="status err">' +
       escapeHtml(q.error.message) +
       '</div>';
+
     return;
   }
 
@@ -104,6 +107,7 @@ export async function loadPlayerAdmin() {
       .map(
         p => `
           <div class="item">
+
             <div
               style="
                 display:flex;
@@ -129,6 +133,7 @@ export async function loadPlayerAdmin() {
                   class="sub"
                   style="margin:4px 0 0"
                 >
+
                   ${
                     p.active === false
                       ? '🔒 Gesperrt'
@@ -142,9 +147,11 @@ export async function loadPlayerAdmin() {
                       ? 'PIN eingerichtet'
                       : 'Noch keine PIN'
                   }
+
                 </div>
 
               </div>
+
 
               <div
                 style="
@@ -162,6 +169,7 @@ export async function loadPlayerAdmin() {
                   🔑 PIN
                 </button>
 
+
                 <button
                   class="smallAdmin"
                   data-action="active"
@@ -173,6 +181,7 @@ export async function loadPlayerAdmin() {
                       : 'Sperren'
                   }
                 </button>
+
 
                 <button
                   class="smallAdmin"
@@ -189,6 +198,7 @@ export async function loadPlayerAdmin() {
               </div>
 
             </div>
+
           </div>
         `
       )
@@ -196,6 +206,10 @@ export async function loadPlayerAdmin() {
     '<div class="sub">Noch keine Spieler.</div>';
 }
 
+
+/*
+ * AKTUELLEN SPIELTAG NEU LADEN
+ */
 
 async function reloadMatchDay() {
   if (!state.matchDay) return;
@@ -213,12 +227,17 @@ async function reloadMatchDay() {
       $('adminStatus'),
       q.error.message
     );
+
     return;
   }
 
   state.matchDay = q.data;
 }
 
+
+/*
+ * UMFRAGE ÖFFNEN
+ */
 
 async function openPoll() {
   if (!state.currentPlayer?.is_admin) return;
@@ -228,6 +247,7 @@ async function openPoll() {
       $('adminStatus'),
       'Kein Spieltag vorhanden.'
     );
+
     return;
   }
 
@@ -235,10 +255,12 @@ async function openPoll() {
 
   if (button) {
     button.disabled = true;
-    button.textContent = '⏳ Wird geöffnet …';
+    button.textContent =
+      '⏳ Wird geöffnet …';
   }
 
   try {
+
     const result = await supabase
       .from('match_days')
       .update({
@@ -246,185 +268,354 @@ async function openPoll() {
         poll_closed: false,
         poll_push_sent_at: null
       })
-      .eq('id', state.matchDay.id);
+      .eq(
+        'id',
+        state.matchDay.id
+      );
+
 
     if (result.error) {
+
       msg(
         $('adminStatus'),
         'Umfrage konnte nicht geöffnet werden: ' +
         result.error.message
       );
+
       return;
     }
 
+
     await reloadMatchDay();
 
-    /*
-     * PUSH DIREKT SENDEN
-     *
-     * Kein Cron notwendig.
-     */
-    const push = await sendBroadcastPush(
-      'poll_open',
-      '🎾 Neue Padel-Umfrage',
-      `Die Umfrage für ${state.matchDay.match_date} ist jetzt geöffnet.`
-    );
 
-    if (push.ok) {
+    /*
+     * PUSH AN ALLE
+     */
+
+    const push =
+      await sendBroadcastPush(
+        'poll_open',
+        '🎾 Neue Padel-Umfrage',
+        `Die Umfrage für ${state.matchDay.match_date} ist jetzt geöffnet.`
+      );
+
+
+    if (push?.ok) {
+
       msg(
         $('adminStatus'),
         '🔓 Umfrage geöffnet · 🔔 Push an alle Geräte gesendet.',
         true
       );
+
     } else {
+
       msg(
         $('adminStatus'),
         '🔓 Umfrage geöffnet · ⚠️ Push fehlgeschlagen: ' +
-        formatError(push.error)
+        formatError(push?.error)
       );
+
     }
 
   } finally {
+
     if (button) {
+
       button.disabled = false;
-      button.textContent = '🔓 Umfrage öffnen';
+
+      button.textContent =
+        '🔓 Umfrage öffnen';
+
     }
+
   }
 }
 
+
+/*
+ * UMFRAGE SCHLIESSEN
+ */
 
 async function closePoll() {
   if (!state.currentPlayer?.is_admin) return;
 
   if (!state.matchDay) {
+
     msg(
       $('adminStatus'),
       'Kein Spieltag vorhanden.'
     );
+
     return;
   }
 
-  const button = $('closePoll');
+
+  const button =
+    $('closePoll');
+
 
   if (button) {
+
     button.disabled = true;
-    button.textContent = '⏳ Wird geschlossen …';
+
+    button.textContent =
+      '⏳ Wird geschlossen …';
+
   }
 
+
   try {
-    const result = await supabase
-      .from('match_days')
-      .update({
-        poll_open: false,
-        poll_closed: true
-      })
-      .eq('id', state.matchDay.id);
+
+    const result =
+      await supabase
+        .from('match_days')
+        .update({
+          poll_open: false,
+          poll_closed: true
+        })
+        .eq(
+          'id',
+          state.matchDay.id
+        );
+
 
     if (result.error) {
+
       msg(
         $('adminStatus'),
         'Umfrage konnte nicht geschlossen werden: ' +
         result.error.message
       );
+
       return;
     }
 
+
     await reloadMatchDay();
 
-    msg(
-      $('adminStatus'),
-      '🔒 Umfrage wurde geschlossen.',
-      true
-    );
+
+    /*
+     * PUSH AN ALLE
+     */
+
+    const push =
+      await sendBroadcastPush(
+        'poll_close',
+        '🔒 Padel-Umfrage geschlossen',
+        `Die Umfrage für ${state.matchDay.match_date} ist geschlossen.`
+      );
+
+
+    if (push?.ok) {
+
+      msg(
+        $('adminStatus'),
+        '🔒 Umfrage geschlossen · 🔔 Push an alle Geräte gesendet.',
+        true
+      );
+
+    } else {
+
+      msg(
+        $('adminStatus'),
+        '🔒 Umfrage geschlossen · ⚠️ Push fehlgeschlagen: ' +
+        formatError(push?.error)
+      );
+
+    }
 
   } finally {
+
     if (button) {
+
       button.disabled = false;
-      button.textContent = '🔒 Umfrage schließen';
+
+      button.textContent =
+        '🔒 Umfrage schließen';
+
     }
+
   }
 }
 
 
+/*
+ * TEST-PUSH
+ */
+
 async function handleTestPush(button) {
+
   button.disabled = true;
-  button.textContent = '⏳ Wird gesendet …';
+
+  button.textContent =
+    '⏳ Wird gesendet …';
+
 
   try {
-    const result = await sendTestPush();
+
+    const result =
+      await sendTestPush();
+
 
     if (result?.ok) {
+
       msg(
         $('adminStatus'),
         '🔔 Test-Push wurde gesendet.',
         true
       );
+
     } else {
+
+      let details =
+        result?.error || '';
+
+
+      if (
+        !details &&
+        Array.isArray(result?.results)
+      ) {
+
+        details =
+          result.results
+            .map(r => {
+
+              const status =
+                r.statusCode ?? '???';
+
+              const message =
+                r.message ||
+                r.body ||
+                'unbekannter Fehler';
+
+              return (
+                status +
+                ': ' +
+                message
+              );
+
+            })
+            .join(' | ');
+
+      }
+
+
+      if (!details) {
+
+        details =
+          'Unbekannter Push-Fehler.';
+
+      }
+
+
       msg(
         $('adminStatus'),
-        '❌ ' +
-        formatError(
-          result?.error ||
-          result?.results
-        )
+        '❌ ' + details
       );
+
     }
 
   } catch (error) {
+
     msg(
       $('adminStatus'),
       error?.message ||
       'Fehler beim Test-Push.'
     );
+
   }
 
+
   button.disabled = false;
-  button.textContent = '🔔 Test-Push senden';
+
+  button.textContent =
+    '🔔 Test-Push senden';
 }
 
 
+/*
+ * ADMIN BINDINGS
+ */
+
 export function bindAdmin() {
 
-  const openButton = $('openPoll');
-  const closeButton = $('closePoll');
-  const testButton = $('testPush');
+  const openButton =
+    $('openPoll');
+
+  const closeButton =
+    $('closePoll');
+
+  const testButton =
+    $('testPush');
+
 
   if (openButton) {
-    openButton.onclick = openPoll;
+
+    openButton.onclick =
+      openPoll;
+
   }
+
 
   if (closeButton) {
-    closeButton.onclick = closePoll;
+
+    closeButton.onclick =
+      closePoll;
+
   }
+
 
   if (testButton) {
+
     testButton.onclick =
-      () => handleTestPush(testButton);
+      () =>
+        handleTestPush(
+          testButton
+        );
+
   }
 
+
+  /*
+   * SPIELERVERWALTUNG
+   */
 
   document.addEventListener(
     'click',
     async e => {
 
       const btn =
-        e.target.closest('.smallAdmin');
+        e.target.closest(
+          '.smallAdmin'
+        );
+
 
       if (!btn) return;
 
+
       const id =
-        Number(btn.dataset.id);
+        Number(
+          btn.dataset.id
+        );
 
       const action =
         btn.dataset.action;
 
+
       if (!id) return;
+
 
       const session =
         (
           await supabase.auth.getSession()
         ).data.session;
 
+
+      /*
+       * PIN
+       */
 
       if (action === 'pin') {
 
@@ -433,15 +624,20 @@ export function bindAdmin() {
             'Neue 6-stellige PIN für diesen Spieler:'
           );
 
+
         if (!pin) return;
 
+
         if (!/^\d{6}$/.test(pin)) {
+
           msg(
             $('adminStatus'),
             'Die PIN muss genau 6 Ziffern enthalten.'
           );
+
           return;
         }
+
 
         const res =
           await fetch(
@@ -457,7 +653,8 @@ export function bindAdmin() {
                 Authorization:
                   'Bearer ' +
                   (
-                    session?.access_token || ''
+                    session?.access_token ||
+                    ''
                   )
               },
 
@@ -469,10 +666,13 @@ export function bindAdmin() {
             }
           );
 
+
         const body =
           await res.json();
 
+
         if (!res.ok) {
+
           msg(
             $('adminStatus'),
             formatError(
@@ -480,7 +680,9 @@ export function bindAdmin() {
               body.message
             )
           );
+
         } else {
+
           msg(
             $('adminStatus'),
             'PIN wurde erfolgreich gesetzt.',
@@ -488,11 +690,17 @@ export function bindAdmin() {
           );
 
           await loadPlayerAdmin();
+
         }
+
 
         return;
       }
 
+
+      /*
+       * AKTIV / GESPERRT
+       */
 
       if (action === 'active') {
 
@@ -503,7 +711,9 @@ export function bindAdmin() {
             .eq('id', id)
             .single();
 
+
         if (row.error) return;
+
 
         const res =
           await fetch(
@@ -519,7 +729,8 @@ export function bindAdmin() {
                 Authorization:
                   'Bearer ' +
                   (
-                    session?.access_token || ''
+                    session?.access_token ||
+                    ''
                   )
               },
 
@@ -532,10 +743,13 @@ export function bindAdmin() {
             }
           );
 
+
         const body =
           await res.json();
 
+
         if (!res.ok) {
+
           msg(
             $('adminStatus'),
             formatError(
@@ -543,7 +757,9 @@ export function bindAdmin() {
               body.message
             )
           );
+
         } else {
+
           msg(
             $('adminStatus'),
             'Spielerstatus geändert.',
@@ -551,22 +767,32 @@ export function bindAdmin() {
           );
 
           await loadPlayerAdmin();
+
         }
+
 
         return;
       }
 
+
+      /*
+       * STAMMSPIELER / ERSATZ
+       */
 
       if (action === 'stamm') {
 
         const row =
           await supabase
             .from('players')
-            .select('is_stammspieler')
+            .select(
+              'is_stammspieler'
+            )
             .eq('id', id)
             .single();
 
+
         if (row.error) return;
+
 
         const r =
           await supabase
@@ -575,16 +801,25 @@ export function bindAdmin() {
               is_stammspieler:
                 !row.data.is_stammspieler
             })
-            .eq('id', id);
+            .eq(
+              'id',
+              id
+            );
+
 
         if (r.error) {
+
           msg(
             $('adminStatus'),
             r.error.message
           );
+
         } else {
+
           await loadPlayerAdmin();
+
         }
+
       }
 
     }
