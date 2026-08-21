@@ -1,26 +1,13 @@
 import { supabase } from './supabase.js';
 import { state } from './state.js';
 import { $, msg, escapeHtml } from './utils.js';
-import { FUNCTION_URL, SUPABASE_URL } from './config.js';
-
-function formatError(value) {
-  if (!value) return 'Unbekannter Fehler.';
-
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-}
+import { FUNCTION_URL } from './config.js';
 
 
 export async function loadAssignments() {
-
-  if (!state.matchDay) return;
+  if (!state.matchDay) {
+    return;
+  }
 
   const q = await supabase
     .from('assignments')
@@ -63,13 +50,17 @@ export async function loadAssignments() {
 
               ${
                 x.players?.is_stammspieler
+
                   ? '<span class="badge">⭐ Stammspieler</span>'
+
                   : '<span class="badge">Ersatz</span>'
               }
 
               ${
                 x.manually_changed
+
                   ? '<span class="badge">✋ geändert</span>'
+
                   : ''
               }
 
@@ -97,24 +88,99 @@ export async function loadAssignments() {
 }
 
 
-async function sendSchedulePush() {
 
-  try {
+export function bindSchedule() {
 
-    const {
-      data: { session }
-    } = await supabase.auth.getSession();
+  const button = $('generate');
+
+  if (!button) {
+    console.error(
+      'Button #generate nicht gefunden.'
+    );
+
+    return;
+  }
 
 
-    if (!session?.access_token) {
+  button.onclick = async () => {
+
+    if (!state.currentPlayer?.is_admin) {
+
+      msg(
+        $('adminStatus'),
+        'Nur ein Admin kann den Spielplan erzeugen.'
+      );
+
       return;
     }
 
 
-    const response =
-      await fetch(
-        SUPABASE_URL +
-        '/functions/v1/send-push-v5',
+    if (!state.matchDay?.id) {
+
+      msg(
+        $('adminStatus'),
+        'Kein Spieltag geladen.'
+      );
+
+      return;
+    }
+
+
+    button.disabled = true;
+
+    button.textContent =
+      '⏳ Spielplan wird erzeugt …';
+
+
+    msg(
+      $('adminStatus'),
+      'Spielplan wird erzeugt …',
+      true
+    );
+
+
+    try {
+
+      const {
+        data: { session },
+        error: sessionError
+      } = await supabase.auth.getSession();
+
+
+      if (sessionError) {
+
+        throw new Error(
+          'Session konnte nicht geladen werden: ' +
+          sessionError.message
+        );
+      }
+
+
+      if (!session?.access_token) {
+
+        throw new Error(
+          'Keine gültige Anmeldung vorhanden.'
+        );
+      }
+
+
+      console.log(
+        'Spielplan erzeugen:',
+        {
+          match_day_id:
+            state.matchDay.id,
+
+          poll_open:
+            state.matchDay.poll_open,
+
+          poll_closed:
+            state.matchDay.poll_closed
+        }
+      );
+
+
+      const res = await fetch(
+        FUNCTION_URL,
         {
           method: 'POST',
 
@@ -128,186 +194,124 @@ async function sendSchedulePush() {
           },
 
           body: JSON.stringify({
-            type: 'schedule',
-            title: '🎾 Spielplan ist fertig',
-            body: 'Der Spielplan wurde erstellt.',
             match_day_id:
-              state.matchDay.id
+              Number(state.matchDay.id)
           })
         }
       );
 
 
-    const result =
-      await response.json().catch(
-        () => ({})
+      let body = {};
+
+      try {
+
+        body =
+          await res.json();
+
+      } catch {
+
+        body = {};
+
+      }
+
+
+      console.log(
+        'generate-schedule Antwort:',
+        res.status,
+        body
       );
 
 
-    console.log(
-      'Spielplan-Push:',
-      result
-    );
+      if (!res.ok) {
+
+        const errorText =
+          body.details ||
+          body.error ||
+          body.message ||
+          (
+            'Fehler ' +
+            res.status
+          );
 
 
-    return result;
-
-  } catch (error) {
-
-    console.error(
-      'Spielplan-Push Fehler:',
-      error
-    );
-
-    return {
-      ok: false,
-      error:
-        error?.message ||
-        String(error)
-    };
-  }
-}
+        msg(
+          $('adminStatus'),
+          '❌ Spielplan konnte nicht erzeugt werden: ' +
+          errorText
+        );
 
 
-export function bindSchedule() {
-
-  const button =
-    $('generate');
-
-  if (!button) return;
-
-
-  button.onclick =
-    async () => {
-
-      if (!state.currentPlayer?.is_admin) {
         return;
       }
 
 
-      button.disabled = true;
+      if (!body.ok) {
+
+        msg(
+          $('adminStatus'),
+          '❌ Spielplan konnte nicht erzeugt werden: ' +
+          (
+            body.details ||
+            body.error ||
+            body.message ||
+            'Unbekannter Fehler.'
+          )
+        );
+
+
+        return;
+      }
+
+
+      await loadAssignments();
+
+
+      const summary =
+        (body.assignments || [])
+          .map(
+            x =>
+              `${x.court}: ${x.count} Spieler`
+          )
+          .join(' · ');
+
 
       msg(
         $('adminStatus'),
-        'Spielplan wird erzeugt …',
+        '✅ Spielplan wurde erzeugt.' +
+        (
+          summary
+            ? ' ' + summary
+            : ''
+        ),
         true
       );
 
 
-      try {
+    } catch (error) {
 
-        const {
-          data: { session }
-        } =
-          await supabase.auth.getSession();
-
-
-        if (!session?.access_token) {
-
-          msg(
-            $('adminStatus'),
-            'Nicht angemeldet.'
-          );
-
-          return;
-        }
+      console.error(
+        'generate-schedule Fehler:',
+        error
+      );
 
 
-        const res =
-          await fetch(
-            FUNCTION_URL,
-            {
-              method: 'POST',
-
-              headers: {
-                'Content-Type':
-                  'application/json',
-
-                'Authorization':
-                  'Bearer ' +
-                  session.access_token
-              },
-
-              body: JSON.stringify({
-                match_day_id:
-                  state.matchDay.id
-              })
-            }
-          );
+      msg(
+        $('adminStatus'),
+        '❌ ' +
+        (
+          error?.message ||
+          'Unbekannter Fehler beim Erzeugen des Spielplans.'
+        )
+      );
 
 
-        const body =
-          await res.json().catch(
-            () => ({})
-          );
+    } finally {
 
+      button.disabled = false;
 
-        console.log(
-          'generate-schedule response:',
-          res.status,
-          body
-        );
+      button.textContent =
+        '📋 Spielplan jetzt erzeugen';
+    }
 
-
-        if (!res.ok) {
-
-          const errorText =
-            formatError(
-              body.error ||
-              body.message ||
-              body
-            );
-
-
-          msg(
-            $('adminStatus'),
-            '❌ Spielplan konnte nicht erzeugt werden: ' +
-            errorText
-          );
-
-          return;
-        }
-
-
-        await loadAssignments();
-
-
-        const push =
-          await sendSchedulePush();
-
-
-        if (push?.ok) {
-
-          msg(
-            $('adminStatus'),
-            '📋 Spielplan wurde erzeugt · 🔔 Push gesendet.',
-            true
-          );
-
-        } else {
-
-          msg(
-            $('adminStatus'),
-            '📋 Spielplan wurde erzeugt · ⚠️ Push konnte nicht gesendet werden.'
-          );
-
-        }
-
-      } catch (error) {
-
-        msg(
-          $('adminStatus'),
-          '❌ ' +
-          (
-            error?.message ||
-            String(error)
-          )
-        );
-
-      } finally {
-
-        button.disabled = false;
-
-      }
-    };
+  };
 }
