@@ -4,10 +4,13 @@ import { $, msg } from './utils.js';
 import { VAPID_PUBLIC_KEY } from './config.js';
 
 function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
+  const padding =
+    '='.repeat((4 - (base64String.length % 4)) % 4);
+
+  const base64 =
+    (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
 
   return Uint8Array.from(
     atob(base64),
@@ -23,16 +26,19 @@ export async function registerPush() {
   ) {
     return {
       ok: false,
-      reason: 'Dieser Browser unterstützt Web-Push nicht.'
+      reason:
+        'Dieser Browser unterstützt Web-Push nicht.'
     };
   }
 
-  const permission = await Notification.requestPermission();
+  const permission =
+    await Notification.requestPermission();
 
   if (permission !== 'granted') {
     return {
       ok: false,
-      reason: 'Benachrichtigungen wurden nicht erlaubt.'
+      reason:
+        'Benachrichtigungen wurden nicht erlaubt.'
     };
   }
 
@@ -63,7 +69,8 @@ export async function registerPush() {
         auth: json.keys.auth,
         user_agent: navigator.userAgent,
         enabled: true,
-        updated_at: new Date().toISOString()
+        updated_at:
+          new Date().toISOString()
       },
       {
         onConflict: 'endpoint'
@@ -82,22 +89,28 @@ export async function registerPush() {
 
 export async function unregisterPush() {
   const registration =
-    await navigator.serviceWorker.getRegistration('./sw.js');
+    await navigator.serviceWorker
+      .getRegistration('./sw.js');
 
   const subscription =
-    await registration?.pushManager.getSubscription();
+    await registration?.pushManager
+      .getSubscription();
 
-  if (subscription) {
-    await supabase
-      .from('push_subscriptions')
-      .update({
-        enabled: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('endpoint', subscription.endpoint);
+  if (!subscription) return;
 
-    await subscription.unsubscribe();
-  }
+  await supabase
+    .from('push_subscriptions')
+    .update({
+      enabled: false,
+      updated_at:
+        new Date().toISOString()
+    })
+    .eq(
+      'endpoint',
+      subscription.endpoint
+    );
+
+  await subscription.unsubscribe();
 }
 
 export async function loadPushStatus() {
@@ -109,35 +122,20 @@ export async function loadPushStatus() {
 
   try {
     const registration =
-      await navigator.serviceWorker.getRegistration('./sw.js');
+      await navigator.serviceWorker
+        .getRegistration('./sw.js');
 
     const subscription =
-      await registration?.pushManager.getSubscription();
+      await registration?.pushManager
+        .getSubscription();
 
     enabled = !!subscription;
   } catch (error) {
-    console.error('Push-Status konnte nicht geprüft werden:', error);
+    console.error(
+      'Push-Status konnte nicht geprüft werden:',
+      error
+    );
   }
-
-  button.textContent = enabled
-    ? '🔔 Push ist aktiv'
-    : '🔕 Push aktivieren';
-
-  button.dataset.enabled = enabled ? '1' : '0';
-}
-
-  const q = await supabase
-    .from('push_subscriptions')
-    .select('id,enabled')
-    .eq('player_id', state.currentPlayer.id)
-    .eq('enabled', true)
-    .limit(1);
-
-  const enabled = !!q.data?.length;
-
-  const button = $('pushEnable');
-
-  if (!button) return;
 
   button.textContent =
     enabled
@@ -159,11 +157,13 @@ export function bindPush() {
     if (button.dataset.enabled === '1') {
       await unregisterPush();
       await loadPushStatus();
+
       button.disabled = false;
       return;
     }
 
-    const result = await registerPush();
+    const result =
+      await registerPush();
 
     if (!result.ok) {
       msg(
@@ -179,6 +179,7 @@ export function bindPush() {
     }
 
     await loadPushStatus();
+
     button.disabled = false;
   };
 }
@@ -195,24 +196,30 @@ export async function sendTestPush() {
     };
   }
 
-  const response = await fetch(
-    SUPABASE_URL + '/functions/v1/send-push-v5',
-    {
-      method: 'POST',
+  const response =
+    await fetch(
+      SUPABASE_URL +
+        '/functions/v1/send-push-v5',
+      {
+        method: 'POST',
 
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization':
-          'Bearer ' + session.access_token
-      },
+        headers: {
+          'Content-Type':
+            'application/json',
 
-      body: JSON.stringify({
-        type: 'test',
-        title: '🎾 Padel Bros',
-        body: 'Push-Benachrichtigungen funktionieren!'
-      })
-    }
-  );
+          'Authorization':
+            'Bearer ' +
+            session.access_token
+        },
+
+        body: JSON.stringify({
+          type: 'test',
+          title: '🎾 Padel Bros',
+          body:
+            'Push-Benachrichtigungen funktionieren!'
+        })
+      }
+    );
 
   return response.json();
 }
