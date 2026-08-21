@@ -111,7 +111,7 @@ export function bindPush() {
 export async function sendTestPush() {
   const { data: { session } } = await supabase.auth.getSession();
 
-  const response = await fetch(SUPABASE_URL + '/functions/v1/send-push-v2', {
+  const response = await fetch(SUPABASE_URL + '/functions/v1/send-push', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
