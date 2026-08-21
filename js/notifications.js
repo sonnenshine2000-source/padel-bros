@@ -173,7 +173,7 @@ export async function sendTestPush() {
   }
 
   const response = await fetch(
-    SUPABASE_URL + '/functions/v1/send-push-v3',
+    SUPABASE_URL + '/functions/v1/send-push-v4',
     {
       method: 'POST',
 
