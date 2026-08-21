@@ -6,31 +6,49 @@
 <title>Padel Bros</title>
 <link rel="stylesheet" href="./css/style.css">
 </head>
+
 <body>
+
 <div id="loginView" class="login">
 
-<div class="loginbox">
+  <div class="loginbox">
 
-<div class="loginlogo">🎾</div>
+    <div class="loginlogo">🎾</div>
 
-<h1>Padel Bros</h1>
+    <h1>Padel Bros</h1>
 
-<p style="color:#6b7280">
-Deine private Padel-Gruppe
-</p>
+    <p style="color:#6b7280">
+      Deine private Padel-Gruppe
+    </p>
 
-<div class="pinlogin">
-<label for="playerSelect">Spieler</label>
-<select id="playerSelect" class="logininput">
-<option value="">Spieler auswählen …</option>
-</select>
-<label for="pinInput">6-stellige PIN</label>
-<input id="pinInput" class="logininput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••">
-<button id="pinLogin" class="google">🔐 Anmelden</button>
-</div>
-<div id="loginStatus"></div>
+    <div class="pinlogin">
 
-</div>
+      <label for="playerSelect">Spieler</label>
+
+      <select id="playerSelect" class="logininput">
+        <option value="">Spieler auswählen …</option>
+      </select>
+
+      <label for="pinInput">6-stellige PIN</label>
+
+      <input
+        id="pinInput"
+        class="logininput"
+        type="password"
+        inputmode="numeric"
+        maxlength="6"
+        placeholder="••••••"
+      >
+
+      <button id="pinLogin" class="google">
+        🔐 Anmelden
+      </button>
+
+    </div>
+
+    <div id="loginStatus"></div>
+
+  </div>
 
 </div>
 
@@ -39,135 +57,104 @@ Deine private Padel-Gruppe
 
 <header class="top">
 
-<div class="topin">
+  <div class="topin">
 
-<div class="brand">
+    <div class="brand">
+      <div class="ball">🎾</div>
+      Padel Bros
+    </div>
 
-<div class="ball">🎾</div>
+    <div class="userbar">
 
-Padel Bros
+      <span id="who" class="userpill"></span>
 
-</div>
+      <button id="logout" class="outline">
+        Abmelden
+      </button>
 
-<div class="userbar">
+    </div>
 
-<span id="who" class="userpill"></span>
-
-<button id="logout" class="outline">
-Abmelden
-</button>
-
-</div>
-
-</div>
+  </div>
 
 </header>
 
 
 <main>
 
-
 <section class="hero">
 
-<small>NÄCHSTER SPIELTAG</small>
+  <small>NÄCHSTER SPIELTAG</small>
 
-<h1 id="heroDate">
-Dienstag
-</h1>
+  <h1 id="heroDate">
+    Dienstag
+  </h1>
 
-<div class="date">
-🎾 Court 5 · 18:30 Uhr
-&nbsp; · &nbsp;
-Court 1 · 19:00 Uhr
-</div>
+  <div class="date">
+    🎾 Court 5 · 18:30 Uhr
+    &nbsp; · &nbsp;
+    Court 1 · 19:00 Uhr
+  </div>
 
 </section>
 
 
 <div class="grid">
 
-
 <section class="card">
 
-<h2>📊 Wer ist dabei?</h2>
+  <h2>📊 Wer ist dabei?</h2>
 
-<div class="sub" id="pollInfo">
-Offen bis Dienstag 17:00 Uhr.
-</div>
-
-
-<div class="pollgrid">
-
-<button class="vote" data-response="18:30">
-
-🟢
-
-<b>18:30 Uhr</b>
-
-<span>
-Court 5
-</span>
-
-</button>
+  <div class="sub" id="pollInfo">
+    Offen bis Dienstag 17:00 Uhr.
+  </div>
 
 
-<button class="vote" data-response="19:00">
+  <div class="pollgrid">
 
-🔵
-
-<b>19:00 Uhr</b>
-
-<span>
-Court 1
-</span>
-
-</button>
+    <button class="vote" data-response="18:30">
+      🟢
+      <b>18:30 Uhr</b>
+      <span>Court 5</span>
+    </button>
 
 
-<button class="vote" data-response="egal">
-
-🟣
-
-<b>Egal wann</b>
-
-<span>
-Ich bin flexibel
-</span>
-
-</button>
+    <button class="vote" data-response="19:00">
+      🔵
+      <b>19:00 Uhr</b>
+      <span>Court 1</span>
+    </button>
 
 
-<button class="vote" data-response="nein">
-
-🔴
-
-<b>Kann nicht</b>
-
-<span>
-Diesmal nicht dabei
-</span>
-
-</button>
-
-</div>
+    <button class="vote" data-response="egal">
+      🟣
+      <b>Egal wann</b>
+      <span>Ich bin flexibel</span>
+    </button>
 
 
-<div id="pollStatus"></div>
+    <button class="vote" data-response="nein">
+      🔴
+      <b>Kann nicht</b>
+      <span>Diesmal nicht dabei</span>
+    </button>
+
+  </div>
+
+
+  <div id="pollStatus"></div>
 
 </section>
 
 
 <section class="card">
 
-<h2>👥 Abstimmung</h2>
+  <h2>👥 Abstimmung</h2>
 
-<div class="sub">
+  <div class="sub">
+    Wer abgestimmt hat, wird hier angezeigt.
+  </div>
 
-Wer abgestimmt hat, wird hier angezeigt.
-
-</div>
-
-<div id="pollSummary"></div>
+  <div id="pollSummary"></div>
 
 </section>
 
@@ -177,131 +164,222 @@ Wer abgestimmt hat, wird hier angezeigt.
 
 <section class="card" style="margin-top:16px">
 
-<h2>🏟️ Spielplan</h2>
+  <h2>🏟️ Spielplan</h2>
 
-<div class="sub">
-Die aktuelle Zuordnung für den Spieltag.
-</div>
-
-
-<div class="courts">
+  <div class="sub">
+    Die aktuelle Zuordnung für den Spieltag.
+  </div>
 
 
-<div class="court court5">
+  <div class="courts">
 
-<h3>Court 5</h3>
+    <div class="court court5">
 
-<div class="time">
-18:30
-</div>
+      <h3>Court 5</h3>
 
-<div id="court5">
-Noch keine Zuordnung.
-</div>
+      <div class="time">
+        18:30
+      </div>
 
-</div>
+      <div id="court5">
+        Noch keine Zuordnung.
+      </div>
 
-
-<div class="court court1">
-
-<h3>Court 1</h3>
-
-<div class="time">
-19:00
-</div>
-
-<div id="court1">
-Noch keine Zuordnung.
-</div>
-
-</div>
+    </div>
 
 
-</div>
+    <div class="court court1">
+
+      <h3>Court 1</h3>
+
+      <div class="time">
+        19:00
+      </div>
+
+      <div id="court1">
+        Noch keine Zuordnung.
+      </div>
+
+    </div>
+
+  </div>
 
 
-<div id="scheduleStatus"></div>
+  <div id="scheduleStatus"></div>
 
 </section>
 
 
 
 <section
-id="adminCard"
-class="card admin hidden"
-style="margin-top:16px"
+  id="adminCard"
+  class="card admin hidden"
+  style="margin-top:16px"
 >
 
-<h2>👑 Admin</h2>
+  <h2>👑 Admin</h2>
 
-<div class="sub">
-Spieltag verwalten.
-</div>
+  <div class="sub">
+    Spieltag verwalten.
+  </div>
 
-<button id="generate" class="primary">
-  Spielplan jetzt erzeugen
-</button>
 
-<button id="testPush" class="primary" style="margin-top:10px">
-  🔔 Test-Push senden
-</button>
+  <!-- UMFRAGE -->
 
-<div id="adminStatus"></div>
+  <h3 style="margin:16px 0 5px">
+    📊 Umfrage
+  </h3>
 
-<div id="adminStatus"></div>
-<hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
-<h3 style="margin:0 0 5px">👥 Spielerverwaltung</h3>
-<div class="sub">Spieler freigeben, sperren und 6-stellige PINs setzen.</div>
-<div id="playerAdminList" class="list"><div class="sub">Spieler werden geladen …</div></div>
+  <div
+    class="sub"
+    style="margin-bottom:10px"
+  >
+    Umfrage für den aktuellen Spieltag öffnen oder schließen.
+  </div>
+
+
+  <button
+    id="openPoll"
+    class="primary"
+  >
+    🔓 Umfrage öffnen
+  </button>
+
+
+  <button
+    id="closePoll"
+    class="primary"
+    style="margin-top:10px"
+  >
+    🔒 Umfrage schließen
+  </button>
+
+
+  <!-- SPIELPLAN -->
+
+  <h3 style="margin:20px 0 5px">
+    🏟️ Spielplan
+  </h3>
+
+
+  <button
+    id="generate"
+    class="primary"
+  >
+    📋 Spielplan jetzt erzeugen
+  </button>
+
+
+  <!-- TEST PUSH -->
+
+  <button
+    id="testPush"
+    class="primary"
+    style="margin-top:10px"
+  >
+    🔔 Test-Push senden
+  </button>
+
+
+  <div id="adminStatus"></div>
+
+
+  <hr
+    style="
+      border:0;
+      border-top:1px solid var(--line);
+      margin:20px 0
+    "
+  >
+
+
+  <h3 style="margin:0 0 5px">
+    👥 Spielerverwaltung
+  </h3>
+
+
+  <div class="sub">
+    Spieler freigeben, sperren und
+    6-stellige PINs setzen.
+  </div>
+
+
+  <div
+    id="playerAdminList"
+    class="list"
+  >
+    <div class="sub">
+      Spieler werden geladen …
+    </div>
+  </div>
+
 </section>
 
 
 
-<section class="grid" style="margin-top:16px">
+<section
+  class="grid"
+  style="margin-top:16px"
+>
 
 
 <section class="card">
 
-<h2>🔔 Benachrichtigungen</h2>
+  <h2>🔔 Benachrichtigungen</h2>
 
-<div class="sub">Padel Bros kann dir direkt auf dem Handy Bescheid geben.</div>
+  <div class="sub">
+    Padel Bros kann dir direkt auf dem Handy
+    Bescheid geben.
+  </div>
 
-<button id="pushEnable" class="primary" style="margin-top:12px">🔕 Push aktivieren</button>
-<div id="pushStatus"></div>
+
+  <button
+    id="pushEnable"
+    class="primary"
+    style="margin-top:12px"
+  >
+    🔕 Push aktivieren
+  </button>
+
+
+  <div id="pushStatus"></div>
 
 </section>
 
 
+
 <section class="card">
 
-<h2>💰 Ersatzspieler</h2>
+  <h2>💰 Ersatzspieler</h2>
 
-<div class="sub">
-15 € an den vertretenen Stammspieler.
-</div>
+  <div class="sub">
+    15 € an den vertretenen Stammspieler.
+  </div>
 
-<div id="payments">
 
-<div class="sub">
-Keine offenen Zahlungen.
-</div>
+  <div id="payments">
 
-</div>
+    <div class="sub">
+      Keine offenen Zahlungen.
+    </div>
+
+  </div>
 
 </section>
 
 
+
 <section class="card">
 
-<h2>🏆 Matches</h2>
+  <h2>🏆 Matches</h2>
 
-<div id="matches">
+  <div id="matches">
 
-<div class="sub">
-Noch keine Matches.
-</div>
+    <div class="sub">
+      Noch keine Matches.
+    </div>
 
-</div>
+  </div>
 
 </section>
 
@@ -311,6 +389,12 @@ Noch keine Matches.
 </main>
 
 </div>
-<script type="module" src="./js/app.js"></script>
+
+
+<script
+  type="module"
+  src="./js/app.js"
+></script>
+
 </body>
 </html>
