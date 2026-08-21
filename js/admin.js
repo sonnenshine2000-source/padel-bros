@@ -66,10 +66,18 @@ export function bindAdmin() {
             true
           );
         } else {
-          msg(
-            $('adminStatus'),
-            result.error || 'Test-Push konnte nicht gesendet werden.'
-          );
+  const details =
+    result.error ||
+    result.results?.map(r =>
+      `${r.statusCode ?? '???'}: ${r.message || r.body || 'unbekannter Fehler'}`
+    ).join(' | ') ||
+    'Unbekannter Push-Fehler.';
+
+  msg(
+    $('adminStatus'),
+    '❌ ' + details
+  );
+}
         }
       } catch (error) {
         msg(
