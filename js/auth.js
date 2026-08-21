@@ -1,6 +1,6 @@
 import { supabase, SUPABASE_URL } from './supabase.js';
 import { state } from './state.js';
-import { $, msg, escapeHtml } from './utils.js';
+import { $, msg } from './utils.js';
 
 
 function showLogin() {
@@ -15,106 +15,73 @@ function showApp() {
 }
 
 
-function getSession() {
-  return supabase.auth.getSession();
-}
-
-
 /*
  * SPIELER LADEN
  */
 
 export async function loadLoginPlayers() {
 
-  const select =
-    $('playerSelect');
+  const select = $('playerSelect');
 
   if (!select) return;
 
-
-  const q =
-    await supabase
-      .from('players')
-      .select(
-        'id,name,active'
-      )
-      .eq(
-        'active',
-        true
-      )
-      .order(
-        'name'
-      );
-
+  const q = await supabase
+    .from('players')
+    .select('id,name,active')
+    .eq('active', true)
+    .order('name');
 
   if (q.error) {
-
     msg(
       $('loginStatus'),
       q.error.message
     );
-
     return;
   }
-
 
   select.innerHTML =
     '<option value="">Spieler auswählen …</option>';
 
+  (q.data || []).forEach(player => {
 
-  (q.data || []).forEach(
-    player => {
+    const option =
+      document.createElement('option');
 
-      const option =
-        document.createElement(
-          'option'
-        );
+    option.value = player.name;
+    option.textContent = player.name;
 
-      option.value =
-        player.name;
-
-      option.textContent =
-        player.name;
-
-      select.appendChild(
-        option
-      );
-
-    }
-  );
+    select.appendChild(option);
+  });
 }
 
 
-
 /*
- * AKTUELLEN SPIELER AUS SESSION LADEN
+ * SPIELER AUS AKTUELLER SESSION LADEN
  */
 
 async function loadCurrentPlayerFromSession() {
 
   const {
     data: { session }
-  } = await getSession();
-
+  } = await supabase.auth.getSession();
 
   if (!session?.user?.id) {
+
     state.currentPlayer = null;
+
     return null;
   }
 
-
-  const q =
-    await supabase
-      .from('players')
-      .select(
-        'id,name,active,is_admin,is_stammspieler,paypal_email,auth_user_id,login_email,password_initialized'
-      )
-      .eq(
-        'auth_user_id',
-        session.user.id
-      )
-      .maybeSingle();
-
+  const q = await supabase
+    .from('players')
+    .select(
+      'id,name,active,is_admin,is_stammspieler,paypal_email,auth_user_id,login_email,password_initialized'
+    )
+    .eq(
+      'auth_user_id',
+      session.user.id
+    )
+    .maybeSingle();
 
   if (q.error) {
 
@@ -126,8 +93,10 @@ async function loadCurrentPlayerFromSession() {
     return null;
   }
 
-
-  if (!q.data || q.data.active === false) {
+  if (
+    !q.data ||
+    q.data.active === false
+  ) {
 
     state.currentPlayer = null;
 
@@ -136,18 +105,15 @@ async function loadCurrentPlayerFromSession() {
     return null;
   }
 
-
   state.currentPlayer =
     q.data;
-
 
   return q.data;
 }
 
 
-
 /*
- * PASSWORT-EINRICHTUNG
+ * PASSWORT-EINRICHTUNG ANZEIGEN
  */
 
 function showPasswordSetup() {
@@ -166,13 +132,16 @@ function showPasswordSetup() {
       '.loginbox'
     );
 
-
   if (!box) return;
 
 
   let setup =
     $('passwordSetup');
 
+
+  /*
+   * Bereits vorhanden
+   */
 
   if (setup) {
 
@@ -184,15 +153,17 @@ function showPasswordSetup() {
   }
 
 
+  /*
+   * Passwort-Bereich erzeugen
+   */
+
   setup =
     document.createElement(
       'div'
     );
 
-
   setup.id =
     'passwordSetup';
-
 
   setup.innerHTML = `
 
@@ -200,7 +171,7 @@ function showPasswordSetup() {
       style="
         margin-top:20px;
         padding-top:20px;
-        border-top:1px solid #e5e7eb
+        border-top:1px solid #e5e7eb;
       "
     >
 
@@ -211,7 +182,6 @@ function showPasswordSetup() {
       >
         🔐 Eigenes Passwort festlegen
       </h2>
-
 
       <p
         style="
@@ -232,7 +202,6 @@ function showPasswordSetup() {
         Neues Passwort
       </label>
 
-
       <input
         id="newPassword"
         class="logininput"
@@ -247,7 +216,6 @@ function showPasswordSetup() {
       >
         Passwort wiederholen
       </label>
-
 
       <input
         id="newPassword2"
@@ -276,7 +244,6 @@ function showPasswordSetup() {
 
   `;
 
-
   box.appendChild(
     setup
   );
@@ -285,7 +252,6 @@ function showPasswordSetup() {
   $('setPassword').onclick =
     setInitialPassword;
 }
-
 
 
 /*
@@ -297,14 +263,11 @@ async function setInitialPassword() {
   const password =
     $('newPassword')?.value || '';
 
-
   const password2 =
     $('newPassword2')?.value || '';
 
-
   const status =
     $('passwordSetupStatus');
-
 
   const button =
     $('setPassword');
@@ -365,8 +328,7 @@ async function setInitialPassword() {
   }
 
 
-  button.disabled =
-    true;
+  button.disabled = true;
 
   button.textContent =
     '⏳ Wird gespeichert …';
@@ -376,7 +338,7 @@ async function setInitialPassword() {
 
     const {
       data: { session }
-    } = await getSession();
+    } = await supabase.auth.getSession();
 
 
     if (!session?.access_token) {
@@ -407,9 +369,7 @@ async function setInitialPassword() {
           },
 
           body: JSON.stringify({
-            action:
-              'set_password',
-
+            action: 'set_password',
             password
           })
         }
@@ -419,9 +379,7 @@ async function setInitialPassword() {
     const result =
       await response
         .json()
-        .catch(
-          () => ({})
-        );
+        .catch(() => ({}));
 
 
     if (!response.ok) {
@@ -437,6 +395,25 @@ async function setInitialPassword() {
     }
 
 
+    /*
+     * Spieler neu laden
+     */
+
+    const player =
+      await loadCurrentPlayerFromSession();
+
+
+    if (!player) {
+
+      msg(
+        status,
+        'Passwort gespeichert, aber Spieler konnte nicht geladen werden.'
+      );
+
+      return;
+    }
+
+
     msg(
       status,
       '✅ Passwort erfolgreich eingerichtet.',
@@ -444,52 +421,55 @@ async function setInitialPassword() {
     );
 
 
+    /*
+     * Passwort-Bereich ausblenden
+     */
+
     if ($('passwordSetup')) {
 
       $('passwordSetup')
         .classList.add(
           'hidden'
         );
-
     }
 
+
+    /*
+     * Normale App anzeigen
+     */
 
     showApp();
 
 
-    const player =
-      await loadCurrentPlayerFromSession();
+    if ($('who')) {
 
-
-    if (player) {
-
-      if ($('who')) {
-
-        $('who').textContent =
-          player.name +
-          (
-            player.is_admin
-              ? ' 👑'
-              : ''
-          );
-
-      }
-
-      /*
-       * app.js übernimmt anschließend
-       * den normalen Seitenaufbau.
-       */
-
-      window.dispatchEvent(
-        new CustomEvent(
-          'padel-password-ready'
-        )
-      );
-
+      $('who').textContent =
+        player.name +
+        (
+          player.is_admin
+            ? ' 👑'
+            : ''
+        );
     }
 
 
+    /*
+     * app.js informieren
+     */
+
+    window.dispatchEvent(
+      new CustomEvent(
+        'padel-password-ready'
+      )
+    );
+
+
   } catch (error) {
+
+    console.error(
+      'Passwort-Fehler:',
+      error
+    );
 
     msg(
       status,
@@ -499,28 +479,22 @@ async function setInitialPassword() {
 
   } finally {
 
-    button.disabled =
-      false;
+    button.disabled = false;
 
     button.textContent =
       '🔐 Passwort speichern';
-
   }
 }
-
 
 
 /*
  * LOGIN MIT INITIAL-PIN
  */
 
-async function loginWithPin(
-  onLogin
-) {
+async function loginWithPin(onLogin) {
 
   const name =
     $('playerSelect')?.value || '';
-
 
   const pin =
     $('pinInput')?.value || '';
@@ -552,8 +526,7 @@ async function loginWithPin(
     $('pinLogin');
 
 
-  button.disabled =
-    true;
+  button.disabled = true;
 
   button.textContent =
     '⏳ Anmeldung …';
@@ -585,9 +558,7 @@ async function loginWithPin(
     const result =
       await response
         .json()
-        .catch(
-          () => ({})
-        );
+        .catch(() => ({}));
 
 
     if (!response.ok) {
@@ -619,11 +590,13 @@ async function loginWithPin(
 
     const sessionResult =
       await supabase.auth.setSession({
+
         access_token:
           result.session.access_token,
 
         refresh_token:
           result.session.refresh_token
+
       });
 
 
@@ -637,6 +610,10 @@ async function loginWithPin(
       return;
     }
 
+
+    /*
+     * Spieler speichern
+     */
 
     state.currentPlayer =
       result.player;
@@ -679,7 +656,6 @@ async function loginWithPin(
             ? ' 👑'
             : ''
         );
-
     }
 
 
@@ -689,10 +665,15 @@ async function loginWithPin(
     ) {
 
       await onLogin();
-
     }
 
+
   } catch (error) {
+
+    console.error(
+      'Login-Fehler:',
+      error
+    );
 
     msg(
       $('loginStatus'),
@@ -700,26 +681,22 @@ async function loginWithPin(
       'Anmeldung fehlgeschlagen.'
     );
 
+
   } finally {
 
-    button.disabled =
-      false;
+    button.disabled = false;
 
     button.textContent =
       '🔐 Anmelden';
-
   }
 }
-
 
 
 /*
  * AUTH BINDINGS
  */
 
-export function bindAuth(
-  onLogin
-) {
+export function bindAuth(onLogin) {
 
   const loginButton =
     $('pinLogin');
@@ -732,7 +709,6 @@ export function bindAuth(
         loginWithPin(
           onLogin
         );
-
   }
 
 
@@ -753,14 +729,15 @@ export function bindAuth(
           loginWithPin(
             onLogin
           );
-
         }
-
       }
     );
-
   }
 
+
+  /*
+   * LOGOUT
+   */
 
   const logout =
     $('logout');
@@ -778,40 +755,45 @@ export function bindAuth(
 
         showLogin();
 
+
         if ($('pinInput')) {
 
           $('pinInput').value =
             '';
-
         }
+
 
         if ($('playerSelect')) {
 
           $('playerSelect').value =
             '';
-
         }
+
+
+        if ($('passwordSetup')) {
+
+          $('passwordSetup')
+            .classList.add(
+              'hidden'
+            );
+        }
+
 
         msg(
           $('loginStatus'),
           'Du wurdest abgemeldet.',
           true
         );
-
       };
-
   }
 }
-
 
 
 /*
  * SESSION BEIM START
  */
 
-export async function loadSession(
-  onLogin
-) {
+export async function loadSession(onLogin) {
 
   await loadLoginPlayers();
 
@@ -819,6 +801,10 @@ export async function loadSession(
   const player =
     await loadCurrentPlayerFromSession();
 
+
+  /*
+   * NICHT ANGEMELDET
+   */
 
   if (!player) {
 
@@ -829,8 +815,7 @@ export async function loadSession(
 
 
   /*
-   * Falls noch kein persönliches Passwort
-   * eingerichtet wurde.
+   * PASSWORT NOCH NICHT EINGERICHTET
    */
 
   if (
@@ -848,6 +833,10 @@ export async function loadSession(
   }
 
 
+  /*
+   * NORMALER LOGIN
+   */
+
   showApp();
 
 
@@ -860,7 +849,6 @@ export async function loadSession(
           ? ' 👑'
           : ''
       );
-
   }
 
 
@@ -870,6 +858,5 @@ export async function loadSession(
   ) {
 
     await onLogin();
-
   }
 }
