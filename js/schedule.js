@@ -3,14 +3,44 @@ import { state } from './state.js';
 import { $, msg, escapeHtml } from './utils.js';
 import { FUNCTION_URL } from './config.js';
 
+function ensurePreviewBox(){
+  let el=$('schedulePreview');
+  if(el)return el;
+  const courts=document.querySelector('.courts');
+  if(!courts)return null;
+  el=document.createElement('div'); el.id='schedulePreview'; el.className='schedule-preview'; courts.parentNode.insertBefore(el,courts);
+  return el;
+}
+function renderPreview(responses){
+  const el=ensurePreviewBox(); if(!el)return;
+  const by={'18:30':[],'19:00':[],'egal':[]};
+  (responses||[]).forEach(r=>{if(by[r.response])by[r.response].push(r.players)});
+  const flex=by.egal.splice(0);
+  while(flex.length && by['18:30'].length<4)by['18:30'].push(flex.shift());
+  while(flex.length && by['19:00'].length<4)by['19:00'].push(flex.shift());
+  const card=(title,time,arr)=>`<div class="preview-court"><div class="preview-head"><div><small>VORLÄUFIG</small><b>${title}</b></div><strong>${time}</strong></div><div class="preview-players">${arr.length?arr.slice(0,4).map(p=>`<span>${escapeHtml(p?.name||'Spieler')}${p?.is_stammspieler?'<i>Stamm</i>':'<i>Ersatz</i>'}</span>`).join(''):'<span class="preview-empty">Noch keine Zusagen</span>'}</div>${arr.length>4?`<div class="preview-more">+${arr.length-4} weitere Zusage(n) – endgültige Zuordnung folgt</div>`:''}</div>`;
+  const unassigned=flex.length;
+  el.innerHTML=`<div class="preview-banner"><div><span class="preview-icon">P</span><div><b>Voraussichtlicher Spielplan</b><p>Basierend auf den bisherigen Abstimmungen · Änderungen jederzeit möglich.</p></div></div><strong>Endgültig ab Dienstag 17:00 Uhr</strong></div><div class="preview-grid">${card('Court 5','18:30 Uhr',by['18:30'])}${card('Court 1','19:00 Uhr',by['19:00'])}</div>${unassigned?`<div class="preview-unassigned">${unassigned} flexible Zusage(n) werden bei der endgültigen Einteilung berücksichtigt.</div>`:''}`;
+}
+function clearPreview(){const el=$('schedulePreview');if(el)el.remove();}
+
 export async function loadAssignments() {
   if (!state.matchDay) return;
   const q = await supabase.from('assignments').select('id,player_id,court,position,manually_changed,players(name,is_stammspieler)').eq('match_day_id',state.matchDay.id).order('court').order('position');
   if(q.error){msg($('scheduleStatus'),q.error.message);return;}
-  const render=(arr,el)=>{$(el).innerHTML=arr.length?arr.map(x=>`<div class="player"><b>${escapeHtml(x.players?.name||'Spieler')}</b>${x.players?.is_stammspieler?'<span class="badge">⭐ Stammspieler</span>':'<span class="badge">Ersatz</span>'}${x.manually_changed?'<span class="badge">✋ geändert</span>':''}</div>`).join(''):'<div class="player">Noch keine Zuordnung.</div>';};
-  render((q.data||[]).filter(x=>x.court==='court5'),'court5');
-  render((q.data||[]).filter(x=>x.court==='court1'),'court1');
-  loadMoveControls(q.data||[]);
+  const assignments=q.data||[];
+  const render=(arr,el)=>{$(el).innerHTML=arr.length?arr.map(x=>`<div class="player"><b>${escapeHtml(x.players?.name||'Spieler')}</b>${x.players?.is_stammspieler?'<span class="badge">Stammspieler</span>':'<span class="badge">Ersatz</span>'}${x.manually_changed?'<span class="badge">geändert</span>':''}</div>`).join(''):'<div class="player">Noch keine Zuordnung.</div>';};
+  render(assignments.filter(x=>x.court==='court5'),'court5');
+  render(assignments.filter(x=>x.court==='court1'),'court1');
+  if(assignments.length){clearPreview();}else await loadProvisionalSchedule();
+  loadMoveControls(assignments);
+}
+
+async function loadProvisionalSchedule(){
+  if(!state.matchDay?.id)return;
+  const q=await supabase.from('poll_responses').select('response,players(name,is_stammspieler)').eq('match_day_id',state.matchDay.id);
+  if(q.error){msg($('scheduleStatus'),'Voraussichtlicher Spielplan konnte nicht geladen werden: '+q.error.message);return;}
+  renderPreview(q.data||[]);
 }
 
 async function loadMoveControls(assignments){
@@ -38,7 +68,7 @@ async function movePlayer(){
     const a=await supabase.from('assignments').update({court:targetCourt,position:targetPosition,manually_changed:true}).eq('id',source.id);
     if(a.error){msg($('moveStatus'),a.error.message);return;}
   }
-  msg($('moveStatus'),'✅ Spieler wurde im Spielplan verschoben.',true); await loadAssignments();
+  msg($('moveStatus'),'Spieler wurde im Spielplan verschoben.',true); await loadAssignments();
 }
 
 export function bindSchedule(){
@@ -46,14 +76,14 @@ export function bindSchedule(){
   if(button)button.onclick=async()=>{
     if(!state.currentPlayer?.is_admin){msg($('adminStatus'),'Nur ein Admin kann den Spielplan erzeugen.');return;}
     if(!state.matchDay?.id){msg($('adminStatus'),'Kein Spieltag geladen.');return;}
-    button.disabled=true;button.textContent='⏳ Spielplan wird erzeugt …';msg($('adminStatus'),'Spielplan wird erzeugt …',true);
+    button.disabled=true;button.textContent='Spielplan wird erzeugt …';msg($('adminStatus'),'Spielplan wird erzeugt …',true);
     try{
       const {data:{session},error:sessionError}=await supabase.auth.getSession(); if(sessionError)throw new Error('Session konnte nicht geladen werden: '+sessionError.message); if(!session?.access_token)throw new Error('Keine gültige Anmeldung vorhanden.');
       const res=await fetch(FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({match_day_id:Number(state.matchDay.id)})});
       let body={};try{body=await res.json();}catch{}
-      if(!res.ok||!body.ok){msg($('adminStatus'),'❌ Spielplan konnte nicht erzeugt werden: '+(body.details||body.error||body.message||('Fehler '+res.status)));return;}
-      await loadAssignments();const summary=(body.assignments||[]).map(x=>`${x.court}: ${x.count} Spieler`).join(' · ');msg($('adminStatus'),'✅ Spielplan wurde erzeugt.'+(summary?' '+summary:''),true);
-    }catch(error){msg($('adminStatus'),'❌ '+(error?.message||'Unbekannter Fehler beim Erzeugen des Spielplans.'));}finally{button.disabled=false;button.textContent='📋 Spielplan jetzt erzeugen';}
+      if(!res.ok||!body.ok){msg($('adminStatus'),'Spielplan konnte nicht erzeugt werden: '+(body.details||body.error||body.message||('Fehler '+res.status)));return;}
+      await loadAssignments();const summary=(body.assignments||[]).map(x=>`${x.court}: ${x.count} Spieler`).join(' · ');msg($('adminStatus'),'Spielplan wurde erzeugt.'+(summary?' '+summary:''),true);
+    }catch(error){msg($('adminStatus'),error?.message||'Unbekannter Fehler beim Erzeugen des Spielplans.');}finally{button.disabled=false;button.textContent='Spielplan jetzt erzeugen';}
   };
   $('movePlayer')?.addEventListener('change',()=>msg($('moveStatus'),'Ziel-Court und Platz auswählen.'));
   $('movePlayerButton')?.addEventListener('click',movePlayer);
