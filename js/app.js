@@ -12,6 +12,7 @@ import { loadCancelledCourts, bindCancellations } from './cancellations.js';
 import { loadHistory } from './history.js';
 import { loadResults } from './results.js';
 import { loadStats } from './stats.js';
+import { bindAdminPollTest } from './admin-poll-test.js';
 
 async function refreshCurrentPlayer(){
   const existing=state.currentPlayer;
@@ -56,10 +57,11 @@ function updateAdminVisibility(){
   if(isAdmin){
     adminCard.classList.remove('hidden');
     loadPlayerAdmin().catch(console.error);
+    bindAdminPollTest();
   }else{
     adminCard.classList.add('hidden');
   }
 }
 
 document.addEventListener('poll-updated',()=>{if(state.matchDay)loadAssignments().catch(console.error);});
-bindAuth(loadAll);bindPoll();bindSchedule();bindAdmin();bindPush();bindCancellations();loadLoginPlayers();loadSession(loadAll);
+bindAuth(loadAll);bindPoll();bindSchedule();bindAdmin();bindPush();bindCancellations();bindAdminPollTest();loadLoginPlayers();loadSession(loadAll);
