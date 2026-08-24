@@ -25,8 +25,9 @@ export async function loadAll() {
 
 function updateAdminVisibility() {
   const adminCard = $('adminCard');
-  if (!adminCard) return;
   const isAdmin = state.currentPlayer?.is_admin === true;
+  document.querySelectorAll('.cancel-court').forEach(b => b.style.display = isAdmin ? 'inline-block' : 'none');
+  if (!adminCard) return;
   if (isAdmin) {
     adminCard.classList.remove('hidden');
     loadPlayerAdmin().catch(error => console.error('Spielerverwaltung konnte nicht geladen werden:', error));
