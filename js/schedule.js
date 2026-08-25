@@ -9,21 +9,16 @@ function renderPreview(responses){
  const by={'18:30':[], '19:00':[]};
  const flex=[];
  (responses||[]).forEach(r=>{const player=r.players;if(!player)return;const item={player,response:r.response};if(r.response==='18:30')by['18:30'].push(item);else if(r.response==='19:00')by['19:00'].push(item);else if(r.response==='egal')flex.push(item);});
- // Die Vorschau soll niemanden verlieren: erst die Fahrgemeinschaft berücksichtigen,
- // danach die übrigen flexiblen Spieler verteilen. Feste Uhrzeiten bleiben verbindlich.
  const norm=n=>String(n||'').trim().toLowerCase();
  const isDaniel=x=>norm(x?.player?.name)==='daniel';
  const isChristian=x=>norm(x?.player?.name)==='christian';
  const all=[...by['18:30'],...by['19:00'],...flex];
- const daniel=all.find(isDaniel);
- const christian=all.find(isChristian);
+ const daniel=all.find(isDaniel), christian=all.find(isChristian);
  const removeFrom=(arr,item)=>{const i=arr.indexOf(item);if(i>=0)arr.splice(i,1);};
- const originalResponse=x=>x?.response;
  if(daniel&&christian){
    removeFrom(by['18:30'],daniel);removeFrom(by['19:00'],daniel);removeFrom(flex,daniel);
    removeFrom(by['18:30'],christian);removeFrom(by['19:00'],christian);removeFrom(flex,christian);
-   const dr=originalResponse(daniel),cr=originalResponse(christian);
-   let target=null;
+   const dr=daniel.response,cr=christian.response;let target=null;
    if(dr==='18:30'&&cr==='18:30')target='18:30';
    else if(dr==='19:00'&&cr==='19:00')target='19:00';
    else if(dr==='egal'&&cr==='18:30')target='18:30';
@@ -31,14 +26,12 @@ function renderPreview(responses){
    else if(dr==='egal'&&cr==='19:00')target='19:00';
    else if(dr==='19:00'&&cr==='egal')target='19:00';
    else if(dr==='egal'&&cr==='egal')target=by['18:30'].length<=by['19:00'].length?'18:30':'19:00';
-   // Unterschiedliche feste Zeiten: beide bleiben bei ihrer eigenen Abstimmung.
    if(target&&by[target].length<=2){by[target].push(daniel,christian);}
    else {
      if(dr==='18:30'||dr==='19:00')by[dr].push(daniel);else flex.push(daniel);
      if(cr==='18:30'||cr==='19:00')by[cr].push(christian);else flex.push(christian);
    }
  }
- // Erst jetzt die übrigen "Egal wann"-Spieler verteilen.
  while(flex.length&&by['18:30'].length<4)by['18:30'].push(flex.shift());
  while(flex.length&&by['19:00'].length<4)by['19:00'].push(flex.shift());
  const card=(title,time,arr)=>`<div class="preview-court"><div class="preview-head"><div><small>VORLÄUFIG</small><b>${title}</b></div><strong>${time}</strong></div><div class="preview-players">${arr.length?arr.slice(0,4).map(x=>`<span>${escapeHtml(x.player?.name||'Spieler')}${x.player?.is_stammspieler?'<i>Stamm</i>':'<i>Ersatz</i>'}</span>`).join(''):'<span class="preview-empty">Noch keine Zusagen</span>'}</div>${arr.length>4?`<div class="preview-more">+${arr.length-4} weitere Zusage(n) – endgültige Zuordnung folgt</div>`:''}</div>`;
