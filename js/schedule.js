@@ -4,45 +4,48 @@ import { $, msg, escapeHtml } from './utils.js';
 import { FUNCTION_URL } from './config.js';
 
 function ensurePreviewBox(){let el=$('schedulePreview');if(el)return el;const courts=document.querySelector('.courts');if(!courts)return null;el=document.createElement('div');el.id='schedulePreview';el.className='schedule-preview';courts.parentNode.insertBefore(el,courts);return el;}
-function renderPreview(responses){const el=ensurePreviewBox();if(!el)return;const by={'18:30':[], '19:00':[]};const flex=[];(responses||[]).forEach(r=>{const player=r.players;if(!player)return;const item={player,response:r.response};if(r.response==='18:30')by['18:30'].push(item);else if(r.response==='19:00')by['19:00'].push(item);else if(r.response==='egal')flex.push(item);});
-  // Feste Uhrzeiten werden grundsätzlich respektiert. Flexible Spieler werden anschließend verteilt.
-  while(flex.length&&by['18:30'].length<4)by['18:30'].push(flex.shift());
-  while(flex.length&&by['19:00'].length<4)by['19:00'].push(flex.shift());
-
-  // Fahrgemeinschaft Daniel + Christian auch in der Vorschau berücksichtigen.
-  // Die Präferenz ist weich: Wenn die beiden kompatibel abgestimmt haben bzw. einer
-  // "Egal wann" gewählt hat, werden sie möglichst gemeinsam auf einen Court gesetzt.
-  const norm=n=>String(n||'').trim().toLowerCase();
-  const isDaniel=n=>norm(n)==='daniel';
-  const isChristian=n=>norm(n)==='christian';
-  const all=[...by['18:30'],...by['19:00']];
-  const daniel=all.find(x=>isDaniel(x.player?.name));
-  const christian=all.find(x=>isChristian(x.player?.name));
-  if(daniel&&christian){
-    const remove=(arr,item)=>{const i=arr.indexOf(item);if(i>=0)arr.splice(i,1);};
-    remove(by['18:30'],daniel);remove(by['19:00'],daniel);remove(flex,daniel);
-    remove(by['18:30'],christian);remove(by['19:00'],christian);remove(flex,christian);
-    const dr=daniel.response,cr=christian.response;
-    let target=null;
-    if(dr==='18:30'&&cr==='18:30')target='18:30';
-    else if(dr==='19:00'&&cr==='19:00')target='19:00';
-    else if(dr==='egal'&&cr==='18:30')target='18:30';
-    else if(dr==='18:30'&&cr==='egal')target='18:30';
-    else if(dr==='egal'&&cr==='19:00')target='19:00';
-    else if(dr==='19:00'&&cr==='egal')target='19:00';
-    else if(dr==='egal'&&cr==='egal')target=by['18:30'].length<=by['19:00'].length?'18:30':'19:00';
-    // Bei zwei unterschiedlichen festen Uhrzeiten bleibt die Abstimmung beider Spieler Vorrang.
-    if(target&&by[target].length<=2){by[target].unshift(christian);by[target].unshift(daniel);}
-    else {
-      // Falls der gemeinsame Court keinen Platz mehr hat, die ursprüngliche Zuordnung wiederherstellen.
-      if(dr==='18:30'||dr==='19:00')by[dr].push(daniel);else flex.push(daniel);
-      if(cr==='18:30'||cr==='19:00')by[cr].push(christian);else flex.push(christian);
-    }
-  }
-  const card=(title,time,arr)=>`<div class="preview-court"><div class="preview-head"><div><small>VORLÄUFIG</small><b>${title}</b></div><strong>${time}</strong></div><div class="preview-players">${arr.length?arr.slice(0,4).map(x=>`<span>${escapeHtml(x.player?.name||'Spieler')}${x.player?.is_stammspieler?'<i>Stamm</i>':'<i>Ersatz</i>'}</span>`).join(''):'<span class="preview-empty">Noch keine Zusagen</span>'}</div>${arr.length>4?`<div class="preview-more">+${arr.length-4} weitere Zusage(n) – endgültige Zuordnung folgt</div>`:''}</div>`;
-  const overflow=by['18:30'].length+by['19:00'].length>8?`<div class="preview-unassigned">Mehr als 8 Zusagen vorhanden. Die endgültige Einteilung entscheidet, wer tatsächlich spielt.</div>`:'';
-  const flexNote=flex.length?`<div class="preview-unassigned">${flex.length} flexible Zusage(n) konnten vorläufig noch keinem freien Platz zugeordnet werden und werden bei der endgültigen Einteilung berücksichtigt.</div>`:'';
-  el.innerHTML=`<div class="preview-banner"><div><span class="preview-icon">P</span><div><b>Voraussichtlicher Spielplan</b><p>Feste Uhrzeiten werden genau wie abgestimmt angezeigt. „Egal wann“ wird auf freie Plätze verteilt. Änderungen jederzeit möglich.</p></div></div><strong>Endgültig ab Dienstag 17:00 Uhr</strong></div><div class="preview-grid">${card('Court 5','18:30 Uhr',by['18:30'])}${card('Court 1','19:00 Uhr',by['19:00'])}</div>${overflow}${flexNote}`;el.style.display='block';}
+function renderPreview(responses){
+ const el=ensurePreviewBox();if(!el)return;
+ const by={'18:30':[], '19:00':[]};
+ const flex=[];
+ (responses||[]).forEach(r=>{const player=r.players;if(!player)return;const item={player,response:r.response};if(r.response==='18:30')by['18:30'].push(item);else if(r.response==='19:00')by['19:00'].push(item);else if(r.response==='egal')flex.push(item);});
+ // Die Vorschau soll niemanden verlieren: erst die Fahrgemeinschaft berücksichtigen,
+ // danach die übrigen flexiblen Spieler verteilen. Feste Uhrzeiten bleiben verbindlich.
+ const norm=n=>String(n||'').trim().toLowerCase();
+ const isDaniel=x=>norm(x?.player?.name)==='daniel';
+ const isChristian=x=>norm(x?.player?.name)==='christian';
+ const all=[...by['18:30'],...by['19:00'],...flex];
+ const daniel=all.find(isDaniel);
+ const christian=all.find(isChristian);
+ const removeFrom=(arr,item)=>{const i=arr.indexOf(item);if(i>=0)arr.splice(i,1);};
+ const originalResponse=x=>x?.response;
+ if(daniel&&christian){
+   removeFrom(by['18:30'],daniel);removeFrom(by['19:00'],daniel);removeFrom(flex,daniel);
+   removeFrom(by['18:30'],christian);removeFrom(by['19:00'],christian);removeFrom(flex,christian);
+   const dr=originalResponse(daniel),cr=originalResponse(christian);
+   let target=null;
+   if(dr==='18:30'&&cr==='18:30')target='18:30';
+   else if(dr==='19:00'&&cr==='19:00')target='19:00';
+   else if(dr==='egal'&&cr==='18:30')target='18:30';
+   else if(dr==='18:30'&&cr==='egal')target='18:30';
+   else if(dr==='egal'&&cr==='19:00')target='19:00';
+   else if(dr==='19:00'&&cr==='egal')target='19:00';
+   else if(dr==='egal'&&cr==='egal')target=by['18:30'].length<=by['19:00'].length?'18:30':'19:00';
+   // Unterschiedliche feste Zeiten: beide bleiben bei ihrer eigenen Abstimmung.
+   if(target&&by[target].length<=2){by[target].push(daniel,christian);}
+   else {
+     if(dr==='18:30'||dr==='19:00')by[dr].push(daniel);else flex.push(daniel);
+     if(cr==='18:30'||cr==='19:00')by[cr].push(christian);else flex.push(christian);
+   }
+ }
+ // Erst jetzt die übrigen "Egal wann"-Spieler verteilen.
+ while(flex.length&&by['18:30'].length<4)by['18:30'].push(flex.shift());
+ while(flex.length&&by['19:00'].length<4)by['19:00'].push(flex.shift());
+ const card=(title,time,arr)=>`<div class="preview-court"><div class="preview-head"><div><small>VORLÄUFIG</small><b>${title}</b></div><strong>${time}</strong></div><div class="preview-players">${arr.length?arr.slice(0,4).map(x=>`<span>${escapeHtml(x.player?.name||'Spieler')}${x.player?.is_stammspieler?'<i>Stamm</i>':'<i>Ersatz</i>'}</span>`).join(''):'<span class="preview-empty">Noch keine Zusagen</span>'}</div>${arr.length>4?`<div class="preview-more">+${arr.length-4} weitere Zusage(n) – endgültige Zuordnung folgt</div>`:''}</div>`;
+ const overflow=by['18:30'].length+by['19:00'].length>8?`<div class="preview-unassigned">Mehr als 8 Zusagen vorhanden. Die endgültige Einteilung entscheidet, wer tatsächlich spielt.</div>`:'';
+ const flexNote=flex.length?`<div class="preview-unassigned">${flex.length} flexible Zusage(n) konnten vorläufig noch keinem freien Platz zugeordnet werden und werden bei der endgültigen Einteilung berücksichtigt.</div>`:'';
+ el.innerHTML=`<div class="preview-banner"><div><span class="preview-icon">P</span><div><b>Voraussichtlicher Spielplan</b><p>Feste Uhrzeiten werden genau wie abgestimmt angezeigt. „Egal wann“ wird auf freie Plätze verteilt. Änderungen jederzeit möglich.</p></div></div><strong>Endgültig ab Dienstag 17:00 Uhr</strong></div><div class="preview-grid">${card('Court 5','18:30 Uhr',by['18:30'])}${card('Court 1','19:00 Uhr',by['19:00'])}</div>${overflow}${flexNote}`;el.style.display='block';
+}
 function clearPreview(){const el=$('schedulePreview');if(el)el.style.display='none';}
 
 export async function loadAssignments(){if(!state.matchDay)return;const q=await supabase.from('assignments').select('id,player_id,court,position,manually_changed,players(name,is_stammspieler)').eq('match_day_id',state.matchDay.id).order('court').order('position');if(q.error){msg($('scheduleStatus'),q.error.message);return;}const assignments=q.data||[];const finalGenerated=Boolean(state.matchDay.schedule_generated_at);const render=(arr,el)=>{$(el).innerHTML=arr.length?arr.map(x=>`<div class="player"><b>${escapeHtml(x.players?.name||'Spieler')}</b>${x.players?.is_stammspieler?'<span class="badge">Stammspieler</span>':'<span class="badge">Ersatz</span>'}${x.manually_changed?'<span class="badge">geändert</span>':''}</div>`).join(''):'<div class="player">Noch keine endgültige Zuordnung.</div>';};if(finalGenerated){render(assignments.filter(x=>x.court==='court5'),'court5');render(assignments.filter(x=>x.court==='court1'),'court1');clearPreview();}else{render([], 'court5');render([], 'court1');await loadProvisionalSchedule();}loadMoveControls(finalGenerated?assignments:[]);}
