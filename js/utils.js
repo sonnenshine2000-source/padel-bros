@@ -7,14 +7,13 @@ export function msg(el,text,ok=false){el.className='status '+(ok?'ok':'err');el.
 
 export function label(v){return {'18:30':'18:30 Uhr · Court 5','19:00':'19:00 Uhr · Court 1','egal':'Egal wann','nein':'Kann nicht'}[v]||v;}
 
-// Die Padel-Spieltage finden immer dienstags statt. Wir berechnen das Datum
-// bewusst über lokale Kalenderwerte und nicht über toISOString(), damit die
-// deutsche Zeitzone das Datum nicht auf Montag verschiebt.
+// Die Padel-Spieltage finden immer dienstags statt.
+// Am Dienstag selbst bleibt der heutige Spieltag den ganzen Tag aktiv,
+// damit Spielplan und Ergebnisse auch nach 17:00 Uhr weiterhin sichtbar sind.
 export function nextTuesday(){
   const now=new Date();
   const day=now.getDay();
-  let add=(2-day+7)%7;
-  if(add===0 && now.getHours()>=17) add=7;
+  const add=(2-day+7)%7;
   const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+add);
   const y=d.getFullYear();
   const m=String(d.getMonth()+1).padStart(2,'0');
