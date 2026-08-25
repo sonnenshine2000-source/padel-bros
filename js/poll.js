@@ -4,6 +4,15 @@ import { $, msg, label, isPollClosed, escapeHtml } from './utils.js';
 
 function notifyPollChanged(){document.dispatchEvent(new CustomEvent('poll-updated'));}
 
+function clearOwnPollUI(){
+  document.querySelectorAll('.vote').forEach(b=>{
+    b.classList.remove('selected');
+    b.disabled=false;
+  });
+  const status=$('pollStatus');
+  if(status)status.textContent='';
+}
+
 export function updatePollUI() {
   const closed = !state.matchDay || isPollClosed(state.matchDay);
   document.querySelectorAll('.vote').forEach(b => { b.disabled = closed; });
@@ -12,14 +21,20 @@ export function updatePollUI() {
 }
 
 export async function loadPoll() {
+  clearOwnPollUI();
   if (!state.matchDay || !state.currentPlayer) { updatePollUI(); return; }
   updatePollUI();
-  const own = await supabase.from('poll_responses').select('response').eq('match_day_id', state.matchDay.id).eq('player_id', state.currentPlayer.id).maybeSingle();
+  const playerId=state.currentPlayer.id;
+  const matchDayId=state.matchDay.id;
+  const own = await supabase.from('poll_responses').select('response').eq('match_day_id', matchDayId).eq('player_id', playerId).maybeSingle();
   if (own.error) { msg($('pollStatus'),'Abstimmung konnte nicht geladen werden: '+own.error.message); return; }
+  // Only apply the result if the user/matchday has not changed while the request was running.
+  if(state.currentPlayer?.id!==playerId || state.matchDay?.id!==matchDayId)return;
   document.querySelectorAll('.vote').forEach(b=>b.classList.toggle('selected',b.dataset.response===own.data?.response));
   if (own.data?.response) msg($('pollStatus'),(isPollClosed(state.matchDay)?'Deine letzte Antwort: ':'Deine Antwort: ')+label(own.data.response),true);
-  const q=await supabase.from('poll_responses').select('response,players(name,is_stammspieler)').eq('match_day_id',state.matchDay.id);
+  const q=await supabase.from('poll_responses').select('response,players(name,is_stammspieler)').eq('match_day_id',matchDayId);
   if(q.error){$('pollSummary').textContent='Abstimmungen konnten nicht geladen werden.';return;}
+  if(state.matchDay?.id!==matchDayId)return;
   const groups={'18:30':[],'19:00':[],'egal':[],'nein':[]};
   (q.data||[]).forEach(r=>groups[r.response]?.push(r.players));
   $('pollSummary').innerHTML=Object.entries(groups).map(([k,arr])=>`<div class="pollrow"><div class="pollhead"><span>${label(k)}</span><span class="count">${arr.length}</span></div><div class="names">${arr.length?arr.map(p=>`<span class="namechip">${escapeHtml(p?.name||'Spieler')} ${p?.is_stammspieler?'<span class="star">Stamm</span>':''}</span>`).join(''):'<span class="sub">Noch niemand</span>'}</div></div>`).join('');
