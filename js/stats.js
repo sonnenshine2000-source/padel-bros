@@ -1,14 +1,23 @@
 import { supabase } from './supabase.js';
 import { $, escapeHtml } from './utils.js';
 
+function ensureStatsLayout(){
+ if(document.getElementById('stats-layout-fix'))return;
+ const style=document.createElement('style');
+ style.id='stats-layout-fix';
+ style.textContent=`.stat-row.all-player-row{grid-template-columns:minmax(120px,1fr) auto auto auto auto;min-width:0}.stat-row.all-player-row>b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stat-row.all-player-row .stat-matches,.stat-row.all-player-row .stat-record,.stat-row.all-player-row .stat-pct,.stat-row.all-player-row .stat-sets{white-space:nowrap}@media(max-width:760px){.stat-row.all-player-row{grid-template-columns:minmax(0,1fr) auto auto;align-items:center}.stat-row.all-player-row .stat-pct{grid-column:3}.stat-row.all-player-row .stat-sets{grid-column:1 / -1;font-size:10px;color:var(--muted);padding-top:2px}.stat-row.all-player-row .stat-record{display:block}.stat-row.all-player-row .stat-matches{display:block}}`;
+ document.head.appendChild(style);
+}
+
 export async function loadStats(){
+ ensureStatsLayout();
  const el=$('statsContent'); if(!el)return;
  const q=await supabase.from('match_days').select('match_date,assignments(court,position,player_id,players:player_id(id,name)),match_results(court,set1_home,set1_away,set2_home,set2_away,set3_home,set3_away)').order('match_date',{ascending:true});
  if(q.error){el.innerHTML=`<div class="status err">${escapeHtml(q.error.message)}</div>`;return;}
  const players=new Map(), pairs=new Map();
  const addPlayer=(id,name)=>{if(!id)return; if(!players.has(id))players.set(id,{id,name:name||'Spieler',matches:0,wins:0,losses:0,setsW:0,setsL:0,pointsW:0,pointsL:0,streak:0,bestStreak:0,replace:0,court5:0,court1:0});return players.get(id)};
  for(const d of q.data||[]){
-  const as=d.assignments||[], by={court5:[],court1:[]}; as.forEach(a=>{if(by[a.court])by[a.court].push(a);addPlayer(a.player_id,a.players?.name)});
+  const as=d.assignments||[], by={court5:[],court1:[]}; as.forEach(a=>{if(by[a.court])by[a.court].push(a)});
   for(const r of d.match_results||[]){
    const teamA=by[r.court].filter((_,i)=>i<2), teamB=by[r.court].filter((_,i)=>i>=2); if(teamA.length<2||teamB.length<2)continue;
    const sets=[[r.set1_home,r.set1_away],[r.set2_home,r.set2_away],[r.set3_home,r.set3_away]].filter(x=>x[0]!=null&&x[1]!=null);
@@ -23,7 +32,7 @@ export async function loadStats(){
  const qualified=rows.filter(p=>p.matches>=5);
  const pct=p=>p.matches?Math.round(p.wins/p.matches*100):0;
  const ranking=qualified.map((p,i)=>`<div class="stat-row"><span class="rank">${i+1}.</span><b>${escapeHtml(p.name)}</b><span>${p.matches} Spiele</span><strong>${p.wins} Siege</strong><span>${pct(p)}%</span></div>`).join('');
- const table=rows.map(p=>`<div class="stat-row"><b>${escapeHtml(p.name)}</b><span>${p.matches} Spiele</span><span>${p.wins}–${p.losses}</span><strong>${pct(p)}%</strong><span>${p.setsW}:${p.setsL} Sätze</span></div>`).join('');
+ const table=rows.map(p=>`<div class="stat-row all-player-row"><b>${escapeHtml(p.name)}</b><span class="stat-matches">${p.matches} Spiele</span><span class="stat-record">${p.wins}–${p.losses}</span><strong class="stat-pct">${pct(p)}%</strong><span class="stat-sets">${p.setsW}:${p.setsL} Sätze</span></div>`).join('');
  const bestPairs=[...pairs.values()].filter(x=>x.matches>=2).map(x=>({...x,pct:Math.round(x.wins/x.matches*100)})).sort((a,b)=>b.pct-a.pct||b.matches-a.matches).slice(0,8);
  const pairHtml=bestPairs.length?bestPairs.map(x=>`<div class="stat-row"><b>${escapeHtml(x.names.join(' + '))}</b><span>${x.matches} Matches</span><strong>${x.wins} Siege · ${x.pct}%</strong></div>`).join(''):'<div class="sub">Noch nicht genug gemeinsame Matches.</div>';
  const most=rows.reduce((a,b)=>b.matches>a.matches?b:a,rows[0]);const best=qualified[0];const streak=rows.reduce((a,b)=>b.bestStreak>a.bestStreak?b:a,rows[0]);
