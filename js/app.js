@@ -14,6 +14,11 @@ import { loadResults } from './results.js';
 import { loadStats } from './stats.js';
 import { bindAdminPollTest } from './admin-poll-test.js';
 
+// Keep the desktop tab bar compact enough to show all sections, while still allowing horizontal scrolling if a very narrow desktop window needs it.
+const tabStyle=document.createElement('style');
+tabStyle.textContent='@media (min-width:761px){.tabs{gap:4px;overflow-x:auto;scrollbar-width:auto;overscroll-behavior-x:contain}.tab{padding:8px 9px;min-height:40px;font-size:12px;letter-spacing:-.01em}}';
+document.head.appendChild(tabStyle);
+
 async function refreshCurrentPlayer(){
   const existing=state.currentPlayer;
   const {data:{session}}=await supabase.auth.getSession();
