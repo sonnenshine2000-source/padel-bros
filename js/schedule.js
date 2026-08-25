@@ -5,10 +5,40 @@ import { FUNCTION_URL } from './config.js';
 
 function ensurePreviewBox(){let el=$('schedulePreview');if(el)return el;const courts=document.querySelector('.courts');if(!courts)return null;el=document.createElement('div');el.id='schedulePreview';el.className='schedule-preview';courts.parentNode.insertBefore(el,courts);return el;}
 function renderPreview(responses){const el=ensurePreviewBox();if(!el)return;const by={'18:30':[], '19:00':[]};const flex=[];(responses||[]).forEach(r=>{const player=r.players;if(!player)return;const item={player,response:r.response};if(r.response==='18:30')by['18:30'].push(item);else if(r.response==='19:00')by['19:00'].push(item);else if(r.response==='egal')flex.push(item);});
-  // Feste Uhrzeiten werden immer exakt dort angezeigt, wo der Spieler abgestimmt hat.
-  // Flexible Spieler werden anschließend nur auf noch freie Plätze verteilt.
+  // Feste Uhrzeiten werden grundsätzlich respektiert. Flexible Spieler werden anschließend verteilt.
   while(flex.length&&by['18:30'].length<4)by['18:30'].push(flex.shift());
   while(flex.length&&by['19:00'].length<4)by['19:00'].push(flex.shift());
+
+  // Fahrgemeinschaft Daniel + Christian auch in der Vorschau berücksichtigen.
+  // Die Präferenz ist weich: Wenn die beiden kompatibel abgestimmt haben bzw. einer
+  // "Egal wann" gewählt hat, werden sie möglichst gemeinsam auf einen Court gesetzt.
+  const norm=n=>String(n||'').trim().toLowerCase();
+  const isDaniel=n=>norm(n)==='daniel';
+  const isChristian=n=>norm(n)==='christian';
+  const all=[...by['18:30'],...by['19:00']];
+  const daniel=all.find(x=>isDaniel(x.player?.name));
+  const christian=all.find(x=>isChristian(x.player?.name));
+  if(daniel&&christian){
+    const remove=(arr,item)=>{const i=arr.indexOf(item);if(i>=0)arr.splice(i,1);};
+    remove(by['18:30'],daniel);remove(by['19:00'],daniel);remove(flex,daniel);
+    remove(by['18:30'],christian);remove(by['19:00'],christian);remove(flex,christian);
+    const dr=daniel.response,cr=christian.response;
+    let target=null;
+    if(dr==='18:30'&&cr==='18:30')target='18:30';
+    else if(dr==='19:00'&&cr==='19:00')target='19:00';
+    else if(dr==='egal'&&cr==='18:30')target='18:30';
+    else if(dr==='18:30'&&cr==='egal')target='18:30';
+    else if(dr==='egal'&&cr==='19:00')target='19:00';
+    else if(dr==='19:00'&&cr==='egal')target='19:00';
+    else if(dr==='egal'&&cr==='egal')target=by['18:30'].length<=by['19:00'].length?'18:30':'19:00';
+    // Bei zwei unterschiedlichen festen Uhrzeiten bleibt die Abstimmung beider Spieler Vorrang.
+    if(target&&by[target].length<=2){by[target].unshift(christian);by[target].unshift(daniel);}
+    else {
+      // Falls der gemeinsame Court keinen Platz mehr hat, die ursprüngliche Zuordnung wiederherstellen.
+      if(dr==='18:30'||dr==='19:00')by[dr].push(daniel);else flex.push(daniel);
+      if(cr==='18:30'||cr==='19:00')by[cr].push(christian);else flex.push(christian);
+    }
+  }
   const card=(title,time,arr)=>`<div class="preview-court"><div class="preview-head"><div><small>VORLÄUFIG</small><b>${title}</b></div><strong>${time}</strong></div><div class="preview-players">${arr.length?arr.slice(0,4).map(x=>`<span>${escapeHtml(x.player?.name||'Spieler')}${x.player?.is_stammspieler?'<i>Stamm</i>':'<i>Ersatz</i>'}</span>`).join(''):'<span class="preview-empty">Noch keine Zusagen</span>'}</div>${arr.length>4?`<div class="preview-more">+${arr.length-4} weitere Zusage(n) – endgültige Zuordnung folgt</div>`:''}</div>`;
   const overflow=by['18:30'].length+by['19:00'].length>8?`<div class="preview-unassigned">Mehr als 8 Zusagen vorhanden. Die endgültige Einteilung entscheidet, wer tatsächlich spielt.</div>`:'';
   const flexNote=flex.length?`<div class="preview-unassigned">${flex.length} flexible Zusage(n) konnten vorläufig noch keinem freien Platz zugeordnet werden und werden bei der endgültigen Einteilung berücksichtigt.</div>`:'';
