@@ -2,17 +2,24 @@ import { supabase } from './supabase.js';
 import { state } from './state.js';
 import { $, escapeHtml, msg } from './utils.js';
 
-export async function loadPayments() {
-  const q = await supabase.from('payments').select('id,amount,paid,paid_at,paid_by,substitute_id,stammspieler_id,players_sub:substitute_id(name),players_main:stammspieler_id(name,paypal_email)').eq('match_day_id', state.matchDay.id);
-  if (q.error || !q.data?.length) { $('payments').innerHTML='<div class="sub">Keine offenen Zahlungen.</div>'; return; }
+async function paymentMatchDay(){
+  if(state.matchDay?.schedule_generated_at && state.matchDay?.poll_closed)return state.matchDay;
+  const q=await supabase.from('match_days').select('id,match_date,poll_open,poll_closed,schedule_generated_at').lte('match_date',new Date().toISOString().slice(0,10)).eq('poll_closed',true).not('schedule_generated_at','is',null).order('match_date',{ascending:false}).limit(1).maybeSingle();
+  return q.data||state.matchDay;
+}
+
+export async function loadPayments(){
+  const day=await paymentMatchDay();
+  if(!day){$('payments').innerHTML='<div class="sub">Keine Zahlungen.</div>';return;}
+  await supabase.rpc('rebuild_match_day_payments',{p_match_day_id:day.id});
+  const q=await supabase.from('payments').select('id,amount,paid,paid_at,paid_by,substitute_id,stammspieler_id,players_sub:substitute_id(name),players_main:stammspieler_id(name,paypal_email)').eq('match_day_id',day.id).order('id');
+  if(q.error||!q.data?.length){$('payments').innerHTML='<div class="sub">Keine offenen Zahlungen.</div>';return;}
   const me=state.currentPlayer?.id;
   $('payments').innerHTML='<div class="list">'+q.data.map(p=>{
     const isPayer=Number(p.substitute_id)===Number(me); const isAdmin=state.currentPlayer?.is_admin===true;
     const paypal=p.players_main?.paypal_email||'';
     const copyBtn=paypal?`<button class="payment-copy-paypal" data-paypal="${escapeHtml(paypal)}">📋 PayPal-Mail kopieren</button>`:'';
-    const action=p.paid
-      ? `${isAdmin?`<button class="payment-undo" data-payment="${p.id}">↩ Zahlung zurücksetzen</button>`:''}`
-      : (isPayer?`<button class="payment-paid" data-payment="${p.id}">✓ Ich habe bezahlt</button>`:'');
+    const action=p.paid?(isAdmin?`<button class="payment-undo" data-payment="${p.id}">↩ Zahlung zurücksetzen</button>`:''):(isPayer?`<button class="payment-paid" data-payment="${p.id}">✓ Ich habe bezahlt</button>`:'');
     return `<div class="item pay"><div><b>${escapeHtml(p.players_sub?.name||'Ersatzspieler')}</b> → ${escapeHtml(p.players_main?.name||'Stammspieler')}<br><small>${Number(p.amount).toFixed(2)} € · PayPal: ${escapeHtml(paypal||'—')}</small>${p.paid_at?`<br><small>Bezahlt am ${new Date(p.paid_at).toLocaleDateString('de-DE')}</small>`:''}${copyBtn?`<div style="margin-top:7px">${copyBtn}</div>`:''}</div><div style="text-align:right"><span class="${p.paid?'paid':'open'}">${p.paid?'✓ Bezahlt':'Offen'}</span>${action?`<div style="margin-top:7px">${action}</div>`:''}</div></div>`;
   }).join('')+'</div>';
   $('payments').querySelectorAll('.payment-paid').forEach(b=>b.onclick=()=>setPaid(Number(b.dataset.payment)));
