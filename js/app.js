@@ -24,22 +24,16 @@ async function refreshCurrentPlayer(){
  if(q.error){console.warn('Aktueller Spieler konnte nicht erneut geladen werden; vorhandene Session-Daten werden verwendet.',q.error);if(existing?.is_admin===true&&$('who'))$('who').textContent=existing.name+' 👑';return existing||null;}
  if(!q.data||q.data.active===false)return null;state.currentPlayer=q.data;if($('who'))$('who').textContent=q.data.name+(q.data.is_admin?' 👑':'');return q.data;
 }
-
 function localDateString(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 async function currentMatchDayDate(){
  const today=localDateString();
- // Tuesday: show today's live match day. On the following days keep the most recent
- // completed/generated match day visible until the next match day is due, so results,
- // payments and the second court do not suddenly disappear overnight.
+ const future=await supabase.from('match_days').select('match_date').gt('match_date',today).eq('poll_open',true).eq('poll_closed',false).order('match_date').limit(1).maybeSingle();
+ if(future.data?.match_date)return future.data.match_date;
  if(new Date().getDay()===2)return today;
  const recent=await supabase.from('match_days').select('match_date,schedule_generated_at').lte('match_date',today).order('match_date',{ascending:false}).limit(1).maybeSingle();
- if(recent.data?.match_date && recent.data.schedule_generated_at){
-   const age=(new Date(today+'T00:00:00')-new Date(recent.data.match_date+'T00:00:00'))/86400000;
-   if(age>=0&&age<=6)return recent.data.match_date;
- }
+ if(recent.data?.match_date&&recent.data.schedule_generated_at){const age=(new Date(today+'T00:00:00')-new Date(recent.data.match_date+'T00:00:00'))/86400000;if(age>=0&&age<=6)return recent.data.match_date;}
  return nextTuesday();
 }
-
 export async function loadAll(){
  if(!state.currentPlayer)return;const player=await refreshCurrentPlayer();if(!player)return;updateAdminVisibility();
  const date=await currentMatchDayDate();
@@ -49,8 +43,6 @@ export async function loadAll(){
  state.matchDay=data;$('heroDate').textContent=niceDate(data.match_date);
  await Promise.all([loadPoll(),loadAssignments(),loadMatches(),loadPayments(),loadCancelledCourts(),loadHistory(),loadResults(),loadStats()]);await loadPushStatus();updateAdminVisibility();
 }
-
 function updateAdminVisibility(){const adminCard=$('adminCard');const isAdmin=state.currentPlayer?.is_admin===true;document.querySelectorAll('.cancel-court').forEach(b=>{b.style.display=isAdmin?'inline-block':'none';b.setAttribute('aria-hidden',isAdmin?'false':'true');});if(!adminCard)return;if(isAdmin){adminCard.classList.remove('hidden');loadPlayerAdmin().catch(console.error);bindAdminPollTest();}else adminCard.classList.add('hidden');}
-
 document.addEventListener('poll-updated',()=>{if(state.matchDay)loadAssignments().catch(console.error);});
 bindAuth(loadAll);bindPoll();bindSchedule();bindAdmin();bindPush();bindCancellations();bindAdminPollTest();loadLoginPlayers();loadSession(loadAll);
