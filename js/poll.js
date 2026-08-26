@@ -52,6 +52,7 @@ async function copyCurrentPoll(button){
     const total=q.data?.length||0;
     const date=niceDate(state.matchDay.match_date);
     const stamp=new Date().toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'});
+    const appLink=window.location.href.split('#')[0];
     const lines=[
       `🎾 *Padel Bros – ${date}*`,
       '',
@@ -72,7 +73,10 @@ async function copyCurrentPoll(button){
       `👥 *Abgestimmt: ${total}*`,
       `🕒 Stand: ${stamp}`,
       '',
-      isPollClosed(state.matchDay)?'🔒 Die Umfrage ist geschlossen.':'👉 Wer noch nicht abgestimmt hat, bitte kurz nachholen!'
+      isPollClosed(state.matchDay)?'🔒 Die Umfrage ist geschlossen.':'👉 Wer noch nicht abgestimmt hat, bitte kurz nachholen!',
+      '',
+      '🔗 *Zur Padel-Bros-App:*',
+      appLink
     ];
     await copyText(lines.join('\n'));
     button.textContent='✅ In die Zwischenablage kopiert';
