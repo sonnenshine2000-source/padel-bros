@@ -26,16 +26,23 @@ async function refreshCurrentPlayer(){
 }
 
 function localDateString(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
-function currentMatchDayDate(){
+async function currentMatchDayDate(){
  const today=localDateString();
- // On Tuesday, keep today's match day visible for the entire day, including after 17:00.
+ // Tuesday: show today's live match day. On the following days keep the most recent
+ // completed/generated match day visible until the next match day is due, so results,
+ // payments and the second court do not suddenly disappear overnight.
  if(new Date().getDay()===2)return today;
+ const recent=await supabase.from('match_days').select('match_date,schedule_generated_at').lte('match_date',today).order('match_date',{ascending:false}).limit(1).maybeSingle();
+ if(recent.data?.match_date && recent.data.schedule_generated_at){
+   const age=(new Date(today+'T00:00:00')-new Date(recent.data.match_date+'T00:00:00'))/86400000;
+   if(age>=0&&age<=6)return recent.data.match_date;
+ }
  return nextTuesday();
 }
 
 export async function loadAll(){
  if(!state.currentPlayer)return;const player=await refreshCurrentPlayer();if(!player)return;updateAdminVisibility();
- const date=currentMatchDayDate();
+ const date=await currentMatchDayDate();
  const {data,error}=await supabase.from('match_days').select('id,match_date,poll_open,poll_closed,court_5_cancelled,court_1_cancelled,schedule_generated_at').eq('match_date',date).maybeSingle();
  if(error){console.error(error);msg($('pollStatus'),error.message);return;}
  if(!data){$('heroDate').textContent=niceDate(date);$('pollStatus').textContent='Für diesen Dienstag wurde noch kein Spieltag angelegt.';updateAdminVisibility();await Promise.all([loadCancelledCourts(),loadHistory(),loadStats()]);return;}
