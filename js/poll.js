@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { state } from './state.js';
-import { $, msg, label, isPollClosed, escapeHtml } from './utils.js';
+import { $, msg, label, isPollClosed, escapeHtml, niceDate } from './utils.js';
 
 function notifyPollChanged(){document.dispatchEvent(new CustomEvent('poll-updated'));}
 
@@ -13,11 +13,82 @@ function clearOwnPollUI(){
   if(status)status.textContent='';
 }
 
+function copyText(text){
+  if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);
+  return new Promise((resolve,reject)=>{
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy');resolve();}catch(e){reject(e)}finally{ta.remove();}
+  });
+}
+
+function ensureCopyPollButton(){
+  let b=$('copyPollWhatsApp');
+  const summary=$('pollSummary');
+  if(!summary)return null;
+  if(!b){
+    b=document.createElement('button');
+    b.id='copyPollWhatsApp';
+    b.className='primary';
+    b.style.cssText='display:none;margin-top:14px;width:100%';
+    b.textContent='📋 Umfrage für WhatsApp kopieren';
+    summary.insertAdjacentElement('afterend',b);
+    b.addEventListener('click',()=>copyCurrentPoll(b));
+  }
+  b.style.display=state.currentPlayer?.is_admin===true?'block':'none';
+  return b;
+}
+
+async function copyCurrentPoll(button){
+  if(!state.currentPlayer?.is_admin||!state.matchDay)return;
+  button.disabled=true;
+  const old=button.textContent;
+  try{
+    const q=await supabase.from('poll_responses').select('response,players(name,is_stammspieler)').eq('match_day_id',state.matchDay.id);
+    if(q.error)throw q.error;
+    const groups={'18:30':[],'19:00':[],'egal':[],'nein':[]};
+    (q.data||[]).forEach(r=>groups[r.response]?.push(r.players?.name||'Spieler'));
+    const total=q.data?.length||0;
+    const date=niceDate(state.matchDay.match_date);
+    const stamp=new Date().toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'});
+    const lines=[
+      `🎾 *Padel Bros – ${date}*`,
+      '',
+      '📊 *Aktueller Umfragestand*',
+      '',
+      `🟢 *18:30 Uhr · Court 5* (${groups['18:30'].length})`,
+      groups['18:30'].length?groups['18:30'].map(n=>`• ${n}`).join('\n'):'• Noch niemand',
+      '',
+      `🔵 *19:00 Uhr · Court 1* (${groups['19:00'].length})`,
+      groups['19:00'].length?groups['19:00'].map(n=>`• ${n}`).join('\n'):'• Noch niemand',
+      '',
+      `🟣 *Egal wann* (${groups.egal.length})`,
+      groups.egal.length?groups.egal.map(n=>`• ${n}`).join('\n'):'• Noch niemand',
+      '',
+      `🔴 *Kann nicht* (${groups.nein.length})`,
+      groups.nein.length?groups.nein.map(n=>`• ${n}`).join('\n'):'• Noch niemand',
+      '',
+      `👥 *Abgestimmt: ${total}*`,
+      `🕒 Stand: ${stamp}`,
+      '',
+      isPollClosed(state.matchDay)?'🔒 Die Umfrage ist geschlossen.':'👉 Wer noch nicht abgestimmt hat, bitte kurz nachholen!'
+    ];
+    await copyText(lines.join('\n'));
+    button.textContent='✅ In die Zwischenablage kopiert';
+    setTimeout(()=>{button.textContent=old;button.disabled=false},1600);
+  }catch(e){
+    msg($('pollStatus'),'Umfrage konnte nicht kopiert werden: '+(e.message||'Unbekannter Fehler.'));
+    button.textContent=old;button.disabled=false;
+  }
+}
+
 export function updatePollUI() {
   const closed = !state.matchDay || isPollClosed(state.matchDay);
   document.querySelectorAll('.vote').forEach(b => { b.disabled = closed; });
   const info=$('pollInfo');
   if(info) info.textContent = !state.matchDay ? 'Für diesen Dienstag ist noch kein Spieltag angelegt.' : (closed ? 'Umfrage geschlossen · seit Dienstag 17:00 Uhr keine Änderungen mehr möglich.' : 'Offen bis Dienstag 17:00 Uhr.');
+  ensureCopyPollButton();
 }
 
 export async function loadPoll() {
@@ -28,7 +99,6 @@ export async function loadPoll() {
   const matchDayId=state.matchDay.id;
   const own = await supabase.from('poll_responses').select('response').eq('match_day_id', matchDayId).eq('player_id', playerId).maybeSingle();
   if (own.error) { msg($('pollStatus'),'Abstimmung konnte nicht geladen werden: '+own.error.message); return; }
-  // Only apply the result if the user/matchday has not changed while the request was running.
   if(state.currentPlayer?.id!==playerId || state.matchDay?.id!==matchDayId)return;
   document.querySelectorAll('.vote').forEach(b=>b.classList.toggle('selected',b.dataset.response===own.data?.response));
   if (own.data?.response) msg($('pollStatus'),(isPollClosed(state.matchDay)?'Deine letzte Antwort: ':'Deine Antwort: ')+label(own.data.response),true);
@@ -38,6 +108,7 @@ export async function loadPoll() {
   const groups={'18:30':[],'19:00':[],'egal':[],'nein':[]};
   (q.data||[]).forEach(r=>groups[r.response]?.push(r.players));
   $('pollSummary').innerHTML=Object.entries(groups).map(([k,arr])=>`<div class="pollrow"><div class="pollhead"><span>${label(k)}</span><span class="count">${arr.length}</span></div><div class="names">${arr.length?arr.map(p=>`<span class="namechip">${escapeHtml(p?.name||'Spieler')} ${p?.is_stammspieler?'<span class="star">Stamm</span>':''}</span>`).join(''):'<span class="sub">Noch niemand</span>'}</div></div>`).join('');
+  ensureCopyPollButton();
 }
 
 export function bindPoll() {
