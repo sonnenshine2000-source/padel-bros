@@ -10,7 +10,7 @@ async function paymentMatchDay(){
 function paypalLink(url,amount){
   if(!url)return '';
   let u=String(url).trim(); if(!/^https?:\/\//i.test(u))u='https://'+u;
-  try{const x=new URL(u);if(!/paypal\.me$/i.test(x.hostname)&&!/\.paypal\.me$/i.test(x.hostname))return '';x.pathname=x.pathname.replace(/\/+$/,'')+'/'+encodeURIComponent(Number(amount).toFixed(2));return x.toString();}catch{return '';}
+  try{const x=new URL(u);if(!/paypal\.me$/i.test(x.hostname)&&!/\.paypal\.me$/i.test(x.hostname))return '';const value=Math.round(Number(amount));if(!Number.isFinite(value)||value<=0)return '';x.pathname=x.pathname.replace(/\/+$/,'')+'/'+value+'EUR';return x.toString();}catch{return '';}
 }
 export async function loadPayments(){
   const day=await paymentMatchDay();
