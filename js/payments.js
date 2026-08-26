@@ -2,26 +2,25 @@ import { supabase } from './supabase.js';
 import { state } from './state.js';
 import { $, escapeHtml, msg } from './utils.js';
 
-async function paymentMatchDay(){
-  if(state.matchDay?.schedule_generated_at && state.matchDay?.poll_closed)return state.matchDay;
-  const q=await supabase.from('match_days').select('id,match_date,poll_open,poll_closed,schedule_generated_at').lte('match_date',new Date().toISOString().slice(0,10)).eq('poll_closed',true).not('schedule_generated_at','is',null).order('match_date',{ascending:false}).limit(1).maybeSingle();
-  return q.data||state.matchDay;
-}
-
 export async function loadPayments(){
-  const day=await paymentMatchDay();
-  if(!day){$('payments').innerHTML='<div class="sub">Keine Zahlungen.</div>';return;}
-  await supabase.rpc('rebuild_match_day_payments',{p_match_day_id:day.id});
-  const q=await supabase.from('payments').select('id,amount,paid,paid_at,paid_by,substitute_id,stammspieler_id,players_sub:substitute_id(name),players_main:stammspieler_id(name,paypal_email)').eq('match_day_id',day.id).order('id');
-  if(q.error||!q.data?.length){$('payments').innerHTML='<div class="sub">Keine offenen Zahlungen.</div>';return;}
-  const me=state.currentPlayer?.id;
-  $('payments').innerHTML='<div class="list">'+q.data.map(p=>{
-    const isPayer=Number(p.substitute_id)===Number(me); const isAdmin=state.currentPlayer?.is_admin===true;
-    const paypal=p.players_main?.paypal_email||'';
-    const copyBtn=paypal?`<button class="payment-copy-paypal" data-paypal="${escapeHtml(paypal)}">📋 PayPal-Mail kopieren</button>`:'';
-    const action=p.paid?(isAdmin?`<button class="payment-undo" data-payment="${p.id}">↩ Zahlung zurücksetzen</button>`:''):(isPayer?`<button class="payment-paid" data-payment="${p.id}">✓ Ich habe bezahlt</button>`:'');
-    return `<div class="item pay"><div><b>${escapeHtml(p.players_sub?.name||'Ersatzspieler')}</b> → ${escapeHtml(p.players_main?.name||'Stammspieler')}<br><small>${Number(p.amount).toFixed(2)} € · PayPal: ${escapeHtml(paypal||'—')}</small>${p.paid_at?`<br><small>Bezahlt am ${new Date(p.paid_at).toLocaleDateString('de-DE')}</small>`:''}${copyBtn?`<div style="margin-top:7px">${copyBtn}</div>`:''}</div><div style="text-align:right"><span class="${p.paid?'paid':'open'}">${p.paid?'✓ Bezahlt':'Offen'}</span>${action?`<div style="margin-top:7px">${action}</div>`:''}</div></div>`;
-  }).join('')+'</div>';
+  const q=await supabase.from('payments').select('id,match_day_id,amount,paid,paid_at,paid_by,substitute_id,stammspieler_id,created_at,players_sub:substitute_id(name),players_main:stammspieler_id(name,paypal_email),match_days:match_day_id(match_date)').order('match_day_id',{ascending:false}).order('id',{ascending:false});
+  if(q.error||!q.data?.length){$('payments').innerHTML='<div class="sub">Keine Zahlungen.</div>';return;}
+  const groups=new Map();
+  for(const p of q.data){const date=p.match_days?.match_date||'';if(!groups.has(date))groups.set(date,[]);groups.get(date).push(p);}
+  const dates=[...groups.keys()].sort((a,b)=>b.localeCompare(a));
+  const me=state.currentPlayer?.id;const isAdmin=state.currentPlayer?.is_admin===true;
+  const formatDate=d=>{if(!d)return'';const [y,m,day]=String(d).slice(0,10).split('-');return `${day}.${m}.${y}`;};
+  const cards=[];
+  for(const date of dates){
+    const entries=groups.get(date)||[];
+    cards.push(`<section class="payment-history-day"><h3 style="margin:12px 0 8px">📅 ${escapeHtml(formatDate(date))}</h3><div class="list">${entries.map(p=>{
+      const isPayer=Number(p.substitute_id)===Number(me);const paypal=p.players_main?.paypal_email||'';
+      const copyBtn=paypal?`<button class="payment-copy-paypal" data-paypal="${escapeHtml(paypal)}">📋 PayPal-Mail kopieren</button>`:'';
+      const action=p.paid?(isAdmin?`<button class="payment-undo" data-payment="${p.id}">↩ Zahlung zurücksetzen</button>`:''):(isPayer?`<button class="payment-paid" data-payment="${p.id}">✓ Ich habe bezahlt</button>`:'');
+      return `<div class="item pay"><div><b>${escapeHtml(p.players_sub?.name||'Ersatzspieler')}</b> → ${escapeHtml(p.players_main?.name||'Stammspieler')}<br><small>${Number(p.amount).toFixed(2)} € · PayPal: ${escapeHtml(paypal||'—')}</small>${p.paid_at?`<br><small>Bezahlt am ${new Date(p.paid_at).toLocaleDateString('de-DE')}</small>`:''}${copyBtn?`<div style="margin-top:7px">${copyBtn}</div>`:''}</div><div style="text-align:right"><span class="${p.paid?'paid':'open'}">${p.paid?'✓ Bezahlt':'Offen'}</span>${action?`<div style="margin-top:7px">${action}</div>`:''}</div></div>`;
+    }).join('')}</div></section>`);
+  }
+  $('payments').innerHTML=cards.join('');
   $('payments').querySelectorAll('.payment-paid').forEach(b=>b.onclick=()=>setPaid(Number(b.dataset.payment)));
   $('payments').querySelectorAll('.payment-undo').forEach(b=>b.onclick=()=>undoPaid(Number(b.dataset.payment)));
   $('payments').querySelectorAll('.payment-copy-paypal').forEach(b=>b.onclick=async()=>{const email=b.dataset.paypal;try{await navigator.clipboard.writeText(email);const old=b.textContent;b.textContent='✓ Kopiert';setTimeout(()=>b.textContent=old,1400);}catch(e){msg($('payments'),'PayPal-Mail konnte nicht kopiert werden.');}});
