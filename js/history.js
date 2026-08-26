@@ -2,6 +2,8 @@ import { supabase } from './supabase.js';
 import { $, escapeHtml, msg } from './utils.js';
 import { state } from './state.js';
 
+const historyStyle=document.createElement('style');historyStyle.textContent='.history-team-group{margin:6px 0;padding:5px 9px;border-radius:9px}.history-team-1{background:#f8edf0;border-left:4px solid var(--pink2)}.history-team-2{background:#eef1f8;border-left:4px solid #737caa}.history-team-winning{box-shadow:inset 0 0 0 2px var(--green);}.history-winner-player{font-weight:950}.history-winner-player span:first-child{color:var(--navy)}';document.head.appendChild(historyStyle);
+
 const courts=[['court5','Court 5 · 18:30'],['court1','Court 1 · 19:00']];
 function startTime(c){return c==='court5'?'18:30':'19:00'}
 function openFor(c,d){const [h,m]=startTime(c).split(':').map(Number);return Date.now()>=new Date(`${d}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`).getTime()+90*60*1000}
