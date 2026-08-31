@@ -23,7 +23,7 @@ async function fetchHistoryData(){
   const [aQ,rQ,pQ]=await Promise.all([
     supabase.from('assignments').select('id,match_day_id,court,position,manually_changed,player_id').in('match_day_id',ids),
     supabase.from('match_results').select('id,match_day_id,court,set1_home,set1_away,set2_home,set2_away,set3_home,set3_away,team1_player1,team1_player2,team2_player1,team2_player2,team1_player1_side,team1_player2_side,team2_player1_side,team2_player2_side').in('match_day_id',ids),
-    supabase.from('players').select('id,name,is_stammspieler,is_guest').eq('active',true)
+    supabase.from('players').select('id,name,is_stammspieler,is_guest').or('active.eq.true,is_guest.eq.true')
   ]);
   if(aQ.error)throw aQ.error;if(rQ.error)throw rQ.error;if(pQ.error)throw pQ.error;
   const players=new Map((pQ.data||[]).map(p=>[Number(p.id),p]));
