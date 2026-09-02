@@ -3,9 +3,8 @@ import { state } from './state.js';
 import { $, escapeHtml, msg } from './utils.js';
 
 async function paymentMatchDay(){
-  if(state.matchDay?.schedule_generated_at && state.matchDay?.poll_closed)return state.matchDay;
   const q=await supabase.from('match_days').select('id,match_date,poll_open,poll_closed,schedule_generated_at').lte('match_date',new Date().toISOString().slice(0,10)).eq('poll_closed',true).not('schedule_generated_at','is',null).order('match_date',{ascending:false}).limit(1).maybeSingle();
-  return q.data||state.matchDay;
+  return q.data||null;
 }
 function paypalLink(url,amount){
   if(!url)return '';
