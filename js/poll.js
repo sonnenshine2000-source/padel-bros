@@ -1,12 +1,131 @@
 import { supabase } from './supabase.js';
 import { state } from './state.js';
 import { $, msg, label, escapeHtml, niceDate } from './utils.js?v=20260905b';
-function notifyPollChanged(){document.dispatchEvent(new CustomEvent('poll-updated'));}
-function pollClosed(){return !state.matchDay||state.matchDay.poll_closed===true;}
-function clearOwnPollUI(){document.querySelectorAll('.vote').forEach(b=>{b.classList.remove('selected');b.disabled=false;});const status=$('pollStatus');if(status)status.textContent='';}
-function copyText(text){if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);return new Promise((resolve,reject)=>{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');resolve();}catch(e){reject(e)}finally{ta.remove();}});}
-function ensureCopyPollButton(){let b=$('copyPollWhatsApp');const summary=$('pollSummary');if(!summary)return null;if(!b){b=document.createElement('button');b.id='copyPollWhatsApp';b.className='primary';b.style.cssText='display:none;margin-top:14px;width:100%';b.textContent='📋 Umfrage für WhatsApp kopieren';summary.insertAdjacentElement('afterend',b);b.addEventListener('click',()=>copyCurrentPoll(b));}b.style.display=state.currentPlayer?.is_admin===true?'block':'none';return b;}
-async function copyCurrentPoll(button){if(!state.currentPlayer?.is_admin||!state.matchDay)return;button.disabled=true;const old=button.textContent;try{const q=await supabase.from('poll_responses').select('response,players(name,is_stammspieler)').eq('match_day_id',state.matchDay.id);if(q.error)throw q.error;const groups={'18:30':[],'19:00':[],'egal':[],'nein':[]};(q.data||[]).forEach(r=>groups[r.response]?.push(r.players?.name||'Spieler'));const total=q.data?.length||0;const date=niceDate(state.matchDay.match_date);const stamp=new Date().toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'});const appLink=window.location.href.split('#')[0];const lines=[`🎾 *Padel Bros – ${date}*`,'','📊 *Aktueller Umfragestand*','',`🟢 *18:30 Uhr · Court 5* (${groups['18:30'].length})`,groups['18:30'].length?groups['18:30'].map(n=>`• ${n}`).join('\n'):'• Noch niemand','',`🔵 *19:00 Uhr · Court 1* (${groups['19:00'].length})`,groups['19:00'].length?groups['19:00'].map(n=>`• ${n}`).join('\n'):'• Noch niemand','',`🟣 *Egal wann* (${groups.egal.length})`,groups.egal.length?groups.egal.map(n=>`• ${n}`).join('\n'):'• Noch niemand','',`🔴 *Kann nicht* (${groups.nein.length})`,groups.nein.length?groups.nein.map(n=>`• ${n}`).join('\n'):'• Noch niemand','',`👥 *Abgestimmt: ${total}*`,`🕒 Stand: ${stamp}`,'',pollClosed()?'🔒 Die Umfrage ist geschlossen.':'👉 Wer noch nicht abgestimmt hat, bitte kurz nachholen!','','🔗 *Zur Padel-Bros-App:*',appLink];await copyText(lines.join('\n'));button.textContent='✅ In die Zwischenablage kopiert';setTimeout(()=>{button.textContent=old;button.disabled=false},1600);}catch(e){msg($('pollStatus'),'Umfrage konnte nicht kopiert werden: '+(e.message||'Unbekannter Fehler.'));button.textContent=old;button.disabled=false;}}
-export function updatePollUI(){const closed=pollClosed();document.querySelectorAll('.vote').forEach(b=>{b.disabled=closed;});const info=$('pollInfo');if(info)info.textContent=!state.matchDay?'Für diesen Dienstag ist noch kein Spieltag angelegt.':(closed?'Umfrage geschlossen.':'Offen – deine Stimme kann jederzeit geändert werden.');ensureCopyPollButton();}
-export async function loadPoll(){clearOwnPollUI();if(!state.matchDay||!state.currentPlayer){updatePollUI();return;}updatePollUI();const playerId=state.currentPlayer.id,matchDayId=state.matchDay.id;const own=await supabase.from('poll_responses').select('response').eq('match_day_id',matchDayId).eq('player_id',playerId).maybeSingle();if(own.error){msg($('pollStatus'),'Abstimmung konnte nicht geladen werden: '+own.error.message);return;}if(state.currentPlayer?.id!==playerId||state.matchDay?.id!==matchDayId)return;document.querySelectorAll('.vote').forEach(b=>b.classList.toggle('selected',b.dataset.response===own.data?.response));if(own.data?.response)msg($('pollStatus'),(pollClosed()?'Deine letzte Antwort: ':'Deine Antwort: ')+label(own.data.response),true);const q=await supabase.from('poll_responses').select('response,players(name,is_stammspieler)').eq('match_day_id',matchDayId);if(q.error){$('pollSummary').textContent='Abstimmungen konnten nicht geladen werden.';return;}if(state.matchDay?.id!==matchDayId)return;const groups={'18:30':[],'19:00':[],'egal':[],'nein':[]};(q.data||[]).forEach(r=>groups[r.response]?.push(r.players));$('pollSummary').innerHTML=Object.entries(groups).map(([k,arr])=>`<div class="pollrow"><div class="pollhead"><span>${label(k)}</span><span class="count">${arr.length}</span></div><div class="names">${arr.length?arr.map(p=>`<span class="namechip">${escapeHtml(p?.name||'Spieler')} ${p?.is_stammspieler?'<span class="star">Stamm</span>':''}</span>`).join(''):'<span class="sub">Noch niemand</span>'}</div></div>`).join('');ensureCopyPollButton();}
-export function bindPoll(){const grid=document.querySelector('.pollgrid');if(!grid)return;grid.onclick=async e=>{const btn=e.target.closest('.vote');if(!btn)return;if(!state.currentPlayer||!state.matchDay)return msg($('pollStatus'),'Bitte zuerst anmelden und einen aktiven Spieltag öffnen.');if(pollClosed()){updatePollUI();return msg($('pollStatus'),'Die Umfrage ist geschlossen.');}if(btn.disabled)return;btn.disabled=true;try{const payload={match_day_id:state.matchDay.id,player_id:state.currentPlayer.id,response:btn.dataset.response,updated_at:new Date().toISOString()};const result=await supabase.from('poll_responses').upsert(payload,{onConflict:'match_day_id,player_id'});if(result.error)throw result.error;msg($('pollStatus'),'Gespeichert: '+label(btn.dataset.response),true);await loadPoll();notifyPollChanged();}catch(e){console.error('Abstimmung speichern fehlgeschlagen:',e);msg($('pollStatus'),'Speichern fehlgeschlagen: '+(e?.message||'Unbekannter Fehler')+(e?.details?' · '+e.details:'')+(e?.hint?' · '+e.hint:''));}finally{const closed=pollClosed();document.querySelectorAll('.vote').forEach(b=>b.disabled=closed);}};}
+
+function notifyPollChanged(){ document.dispatchEvent(new CustomEvent('poll-updated')); }
+function pollClosed(){ return !state.matchDay || state.matchDay.poll_closed === true; }
+
+function clearOwnPollUI(){
+  document.querySelectorAll('.vote').forEach(b=>{
+    b.classList.remove('selected');
+    b.disabled=false;
+  });
+  const status=$('pollStatus');
+  if(status) status.textContent='';
+}
+
+function copyText(text){
+  if(navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+  return new Promise((resolve,reject)=>{
+    const ta=document.createElement('textarea');
+    ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); resolve(); }catch(e){ reject(e); }
+    finally{ ta.remove(); }
+  });
+}
+
+function ensureCopyPollButton(){
+  let b=$('copyPollWhatsApp');
+  const summary=$('pollSummary');
+  if(!summary) return null;
+  if(!b){
+    b=document.createElement('button'); b.id='copyPollWhatsApp'; b.className='primary';
+    b.style.cssText='display:none;margin-top:14px;width:100%';
+    b.textContent='📋 Umfrage für WhatsApp kopieren';
+    summary.insertAdjacentElement('afterend',b);
+    b.addEventListener('click',()=>copyCurrentPoll(b));
+  }
+  b.style.display=state.currentPlayer?.is_admin===true?'block':'none';
+  return b;
+}
+
+async function copyCurrentPoll(button){
+  if(!state.currentPlayer?.is_admin||!state.matchDay) return;
+  button.disabled=true; const old=button.textContent;
+  try{
+    const q=await supabase.from('poll_responses').select('response,players(name,is_stammspieler)').eq('match_day_id',state.matchDay.id);
+    if(q.error) throw q.error;
+    const groups={'18:30':[],'19:00':[],'egal':[],'nein':[]};
+    (q.data||[]).forEach(r=>groups[r.response]?.push(r.players?.name||'Spieler'));
+    const total=q.data?.length||0;
+    const date=niceDate(state.matchDay.match_date);
+    const stamp=new Date().toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'});
+    const appLink=window.location.href.split('#')[0];
+    const lines=[`🎾 *Padel Bros – ${date}*`,'','📊 *Aktueller Umfragestand*','',`🟢 *18:30 Uhr · Court 5* (${groups['18:30'].length})`,groups['18:30'].length?groups['18:30'].map(n=>`• ${n}`).join('\n'):'• Noch niemand','',`🔵 *19:00 Uhr · Court 1* (${groups['19:00'].length})`,groups['19:00'].length?groups['19:00'].map(n=>`• ${n}`).join('\n'):'• Noch niemand','',`🟣 *Egal wann* (${groups.egal.length})`,groups.egal.length?groups.egal.map(n=>`• ${n}`).join('\n'):'• Noch niemand','',`🔴 *Kann nicht* (${groups.nein.length})`,groups.nein.length?groups.nein.map(n=>`• ${n}`).join('\n'):'• Noch niemand','',`👥 *Abgestimmt: ${total}*`,`🕒 Stand: ${stamp}`,'',pollClosed()?'🔒 Die Umfrage ist geschlossen.':'👉 Wer noch nicht abgestimmt hat, bitte kurz nachholen!','','🔗 *Zur Padel-Bros-App:*',appLink];
+    await copyText(lines.join('\n'));
+    button.textContent='✅ In die Zwischenablage kopiert';
+    setTimeout(()=>{button.textContent=old;button.disabled=false},1600);
+  }catch(e){
+    msg($('pollStatus'),'Umfrage konnte nicht kopiert werden: '+(e.message||'Unbekannter Fehler.'));
+    button.textContent=old; button.disabled=false;
+  }
+}
+
+export function updatePollUI(){
+  const closed=pollClosed();
+  document.querySelectorAll('.vote').forEach(b=>{
+    b.disabled=closed;
+    b.type='button';
+  });
+  const info=$('pollInfo');
+  if(info) info.textContent=!state.matchDay?'Für diesen Dienstag ist noch kein Spieltag angelegt.':(closed?'Umfrage geschlossen.':'Offen – deine Stimme kann jederzeit geändert werden.');
+  ensureCopyPollButton();
+}
+
+export async function loadPoll(){
+  clearOwnPollUI();
+  if(!state.matchDay||!state.currentPlayer){ updatePollUI(); return; }
+  updatePollUI();
+  const playerId=state.currentPlayer.id, matchDayId=state.matchDay.id;
+  const own=await supabase.from('poll_responses').select('response').eq('match_day_id',matchDayId).eq('player_id',playerId).maybeSingle();
+  if(own.error){ msg($('pollStatus'),'Abstimmung konnte nicht geladen werden: '+own.error.message); return; }
+  if(state.currentPlayer?.id!==playerId||state.matchDay?.id!==matchDayId) return;
+  document.querySelectorAll('.vote').forEach(b=>b.classList.toggle('selected',b.dataset.response===own.data?.response));
+  if(own.data?.response) msg($('pollStatus'),(pollClosed()?'Deine letzte Antwort: ':'Deine Antwort: ')+label(own.data.response),true);
+  const q=await supabase.from('poll_responses').select('response,players(name,is_stammspieler)').eq('match_day_id',matchDayId);
+  if(q.error){ const el=$('pollSummary'); if(el) el.textContent='Abstimmungen konnten nicht geladen werden.'; return; }
+  if(state.matchDay?.id!==matchDayId) return;
+  const groups={'18:30':[],'19:00':[],'egal':[],'nein':[]};
+  (q.data||[]).forEach(r=>groups[r.response]?.push(r.players));
+  const summary=$('pollSummary');
+  if(summary) summary.innerHTML=Object.entries(groups).map(([k,arr])=>`<div class="pollrow"><div class="pollhead"><span>${label(k)}</span><span class="count">${arr.length}</span></div><div class="names">${arr.length?arr.map(p=>`<span class="namechip">${escapeHtml(p?.name||'Spieler')} ${p?.is_stammspieler?'<span class="star">Stamm</span>':''}</span>`).join(''):'<span class="sub">Noch niemand</span>'}</div></div>`).join('');
+  ensureCopyPollButton();
+}
+
+async function saveVote(btn){
+  if(!state.currentPlayer||!state.matchDay){ msg($('pollStatus'),'Bitte zuerst anmelden und einen aktiven Spieltag öffnen.'); return; }
+  if(pollClosed()){ updatePollUI(); msg($('pollStatus'),'Die Umfrage ist geschlossen.'); return; }
+  const response=btn.dataset.response;
+  if(!response) return;
+  const buttons=[...document.querySelectorAll('.vote')];
+  buttons.forEach(b=>b.disabled=true);
+  buttons.forEach(b=>b.classList.toggle('selected',b===btn));
+  msg($('pollStatus'),'Speichere deine Antwort …',true);
+  const payload={match_day_id:state.matchDay.id,player_id:state.currentPlayer.id,response,updated_at:new Date().toISOString()};
+  try{
+    const result=await supabase.from('poll_responses').upsert(payload,{onConflict:'match_day_id,player_id'}).select('id,response').maybeSingle();
+    if(result.error) throw result.error;
+    if(result.data?.response!==response) throw new Error('Die Datenbank hat die neue Stimme nicht bestätigt.');
+    msg($('pollStatus'),'Gespeichert: '+label(response),true);
+    await loadPoll();
+    notifyPollChanged();
+  }catch(e){
+    console.error('Abstimmung speichern fehlgeschlagen:',e);
+    msg($('pollStatus'),'Speichern fehlgeschlagen: '+(e?.message||'Unbekannter Fehler')+(e?.details?' · '+e.details:'')+(e?.hint?' · '+e.hint:''));
+    buttons.forEach(b=>b.disabled=pollClosed());
+  }
+}
+
+export function bindPoll(){
+  const grid=document.querySelector('.pollgrid');
+  if(!grid) return;
+  const buttons=[...grid.querySelectorAll('.vote')];
+  buttons.forEach(btn=>{
+    btn.type='button';
+    btn.onclick=()=>saveVote(btn);
+    btn.addEventListener('keydown',e=>{
+      if((e.key==='Enter'||e.key===' ')&&!e.repeat){ e.preventDefault(); saveVote(btn); }
+    });
+  });
+}
