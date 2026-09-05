@@ -117,15 +117,22 @@ async function saveVote(btn){
   }
 }
 
+let pollDelegationBound=false;
 export function bindPoll(){
-  const grid=document.querySelector('.pollgrid');
-  if(!grid) return;
-  const buttons=[...grid.querySelectorAll('.vote')];
-  buttons.forEach(btn=>{
-    btn.type='button';
-    btn.onclick=()=>saveVote(btn);
-    btn.addEventListener('keydown',e=>{
-      if((e.key==='Enter'||e.key===' ')&&!e.repeat){ e.preventDefault(); saveVote(btn); }
-    });
+  if(pollDelegationBound) return;
+  pollDelegationBound=true;
+  document.addEventListener('click',e=>{
+    const btn=e.target?.closest?.('.vote');
+    if(!btn) return;
+    if(btn.disabled) return;
+    e.preventDefault();
+    saveVote(btn);
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.repeat||(e.key!=='Enter'&&e.key!==' ')) return;
+    const btn=e.target?.closest?.('.vote');
+    if(!btn||btn.disabled) return;
+    e.preventDefault();
+    saveVote(btn);
   });
 }
