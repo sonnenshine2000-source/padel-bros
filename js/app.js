@@ -4,7 +4,7 @@ import { $, msg, niceDate, nextTuesday } from './utils.js';
 import { loadSession, loadLoginPlayers, bindAuth } from './auth.js';
 
 let modules=null;let modulesPromise=null;
-const moduleFiles={poll:'poll.js',schedule:'schedule.js',matches:'matches.js',payments:'payments.js?v=20260902',admin:'admin.js',guest:'guest.js',notifications:'notifications.js',cancellations:'cancellations.js',history:'history.js?v=20260904',stats:'stats.js',guestStats:'guest-stats.js',historyGuestFix:'history-guest-fix.js',adminPollTest:'admin-poll-test.js'};
+const moduleFiles={poll:'poll.js?v=20260905',schedule:'schedule.js',matches:'matches.js',payments:'payments.js?v=20260902',admin:'admin.js',guest:'guest.js',notifications:'notifications.js',cancellations:'cancellations.js',history:'history.js?v=20260904',stats:'stats.js',guestStats:'guest-stats.js',historyGuestFix:'history-guest-fix.js',adminPollTest:'admin-poll-test.js'};
 async function loadOne(name){try{return await import('./'+moduleFiles[name])}catch(e){console.error('Modul '+name+' konnte nicht geladen werden:',e);return null}}
 async function loadModules(){if(modules)return modules;if(!modulesPromise)modulesPromise=Promise.all(Object.keys(moduleFiles).map(loadOne)).then(ms=>{const out={};Object.keys(moduleFiles).forEach((n,i)=>out[n]=ms[i]);modules=out;return modules});return modules}
 const tabStyle=document.createElement('style');tabStyle.textContent='@media (min-width:761px){.tabs{gap:4px;overflow-x:auto;scrollbar-width:auto;overscroll-behavior-x:contain}.tab{padding:8px 9px;min-height:40px;font-size:12px;letter-spacing:-.01em}}';document.head.appendChild(tabStyle);
