@@ -11,7 +11,7 @@ async function loadDays(){
   days=q.data||[];
   const current=state.matchDay?.id;
   sel.innerHTML='<option value="">Spieltag auswählen …</option>'+days.map(d=>`<option value="${d.id}">${escapeHtml(niceDate(d.match_date))}${d.schedule_generated_at?' · Spielplan':''}</option>`).join('');
-  if(current&&days.some(d=>Number(d.id)===Number(current))){sel.value=String(current);await loadPlayersForDay()}
+  // Spieltag bewusst nicht automatisch auswählen; der Admin soll den gewünschten Tag wählen.
 }
 
 async function loadPlayersForDay(){
