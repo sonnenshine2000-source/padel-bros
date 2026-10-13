@@ -22,8 +22,16 @@ async function movePlayer(){
  const target=rows.find(x=>x.court===targetCourt&&Number(x.position)===targetPosition);
  const courtName=c=>c==='court5'?'Court 5':'Court 1';
  if(!confirm(`${source.players?.name||'Spieler'}: ${courtName(source.court)}, Platz ${source.position} → ${courtName(targetCourt)}, Platz ${targetPosition}${target?.player_id?'\n\nDer dort stehende Spieler wird auf den bisherigen Platz getauscht.':''}\n\nÄnderung speichern?`))return;
- msg($('moveStatus'),'Änderung wird gespeichert …');
- // First move the source to a temporary free position so database uniqueness rules cannot block a swap.
+ msg($('moveStatus'),'Änderung wird sicher gespeichert …');
+ const result=await supabase.rpc('admin_move_assignment',{
+   p_match_day_id:Number(state.matchDay.id),
+   p_player_id:playerId,
+   p_target_court:targetCourt,
+   p_target_position:targetPosition
+ });
+ if(result.error){msg($('moveStatus'),'Verschieben fehlgeschlagen: '+result.error.message);return}
+ msg($('moveStatus'),result.data?.swapped?'Spieler wurden erfolgreich getauscht.':'Spieler wurde erfolgreich verschoben.',true);
+ await loadAssignments()
  const temp=await supabase.from('assignments').update({court:source.court,position:99,manually_changed:true}).eq('id',source.id);
  if(temp.error){msg($('moveStatus'),'Verschieben fehlgeschlagen: '+temp.error.message);return}
  if(target?.player_id){
